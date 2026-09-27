@@ -9,6 +9,11 @@ OpenAI writes sentences → clean + pick a balanced script → ElevenLabs speaks
 → fine-tune Piper on your GPU → export ONNX → test on held-out sentences
 → write new sentences for mispronounced words → train again → final ONNX
 ```
+## 🎙️ Voice Sample
+
+[▶️ Listen to Voice Sample]
+Trained voice to test is here: https://github.com/AkshayRDeshmukh/VoiceClonePiper/blob/main/hello.wav
+
 
 Everything is resumable: pause, close the terminal, reboot — press **Resume** and it continues from the same stage.
 
