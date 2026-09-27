@@ -1,4 +1,4 @@
-# Voice Forge
+# Voice Clone Piper
 
 Turns an ElevenLabs voice into a local Piper voice (`.onnx` + `.onnx.json`) automatically.
 You set keys and a voice once, press **Start**, and watch the dashboard.
