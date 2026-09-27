@@ -1,0 +1,5 @@
+fastapi>=0.110
+uvicorn>=0.29
+requests>=2.31
+numpy>=1.26
+regex>=2024.4.16

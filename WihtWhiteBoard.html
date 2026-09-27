@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revoice Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@500;700&family=Kalam:wght@400;700&family=Patrick+Hand&family=Gochi+Hand&family=Architects+Daughter&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6EAEE; --panel:#F7F8FA; --ink:#18212C; --muted:#586473; --line:#CDD4DC;
+  --accent:#2451B8; --accent-ink:#fff; --rec:#C3352B; --ok:#1E7B4E;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+header{padding:22px 28px 10px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+header h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.01em}
+header p{margin:0;color:var(--muted)}
+main{display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:20px;padding:10px 28px 40px}
+@media (max-width:980px){main{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+section h2{margin:0 0 10px;font-size:16px;font-weight:600;display:flex;gap:10px;align-items:center}
+.scene.board{border-left-color:#1E7B45}
+.scene textarea.boardsrc{font:13px/1.55 var(--mono);min-height:130px;background:#FBFBF7}
+details.help{font-size:13px;color:var(--muted);margin:0 0 12px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff}
+details.help summary{cursor:pointer;font-weight:500;color:var(--ink)}
+details.help pre{font:12px/1.6 var(--mono);white-space:pre-wrap;margin:8px 0 0;color:var(--ink)}
+h3.sub{margin:14px 0 2px;font-size:14px;font-weight:600}
+section h2 .step{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px}
+label{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
+input[type=text],input[type=password],input[type=url],input[type=number],select,textarea{
+  width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font:inherit}
+textarea{resize:vertical;min-height:70px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row > *{flex:1}
+.row > .fit{flex:0 0 auto}
+button{font:inherit;font-weight:500;padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.rec{background:var(--rec);border-color:var(--rec);color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+.check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:8px}
+video.preview{width:100%;border-radius:6px;background:#000;margin-top:10px;max-height:240px}
+#rv{position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none}
+
+/* stage */
+.monitor{background:#1F2833;border-radius:12px;padding:14px;position:relative}
+.monitor canvas{width:100%;display:block;border-radius:4px;background:#000;aspect-ratio:16/9}
+.tally{position:absolute;top:22px;right:24px;display:none;align-items:center;gap:6px;color:#fff;font:500 12px var(--mono);background:rgba(0,0,0,.55);padding:3px 8px;border-radius:4px}
+.tally::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--rec)}
+.monitor.live .tally{display:flex}
+@media (prefers-reduced-motion:no-preference){.monitor.live .tally::before{animation:blink 1s steps(2) infinite}}
+@keyframes blink{50%{opacity:.2}}
+.statusbar{margin-top:10px;color:#C9D2DC;font-size:13px;min-height:20px}
+.progress{height:4px;background:#34404D;border-radius:2px;margin-top:6px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:#7FA2F0;transition:width .2s}
+#outputs a{display:inline-block;margin:8px 10px 0 0;color:var(--accent);font-weight:500}
+.fmt{font:12px var(--mono);color:var(--muted)}
+
+/* scenes */
+#scenes{display:flex;flex-direction:column;gap:10px}
+.empty{color:var(--muted);padding:18px;border:1px dashed var(--line);border-radius:8px;text-align:center}
+.scene{background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:12px 14px}
+.scene.slide{border-left-color:#8A6D1F}
+.scene-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.scene-head .num{font-weight:600;min-width:64px}
+.scene-head select{width:auto}
+.scene-head input[type=number]{width:90px;font-family:var(--mono)}
+.scene-head .title{flex:1;min-width:160px}
+.scene-head .sp{flex:1}
+.scene-head label{margin:0;display:flex;gap:4px;align-items:center}
+.icon{padding:5px 9px}
+.scene textarea{margin-top:8px}
+.scene textarea.points{min-height:54px;font-size:14px}
+.scene-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.scene-foot .st{font-size:13px;color:var(--muted)}
+.scene-foot .st.err{color:var(--rec)}
+.scene-foot .st.good{color:var(--ok)}
+.scene-foot a{color:var(--accent);font-weight:500}
+.tc{font:12px var(--mono);color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Revoice Studio</h1>
+  <p>Transcribe your own lesson video, give it a new ElevenLabs voice, and export MP4 scene by scene.</p>
+</header>
+
+<main>
+<div class="col">
+  <section>
+    <h2><span class="step">1</span>Connect ElevenLabs</h2>
+    <label for="key">API key</label>
+    <input id="key" type="password" placeholder="sk_..." autocomplete="off">
+    <div class="check"><input type="checkbox" id="remember"><label for="remember" style="margin:0">Remember key in this browser</label></div>
+    <div class="row" style="margin-top:10px">
+      <button id="loadVoices" class="fit">Load my voices</button>
+      <select id="voice"><option value="">Load voices first</option></select>
+    </div>
+    <label for="voiceManual">Or paste a voice ID</label>
+    <input id="voiceManual" type="text" placeholder="e.g. 21m00Tcm4TlvDq8ikWAM">
+    <div class="row">
+      <div><label for="model">Voice model</label>
+        <select id="model">
+          <option value="eleven_multilingual_v2">Multilingual v2 (best quality)</option>
+          <option value="eleven_turbo_v2_5">Turbo v2.5 (faster)</option>
+          <option value="eleven_flash_v2_5">Flash v2.5 (fastest)</option>
+        </select></div>
+    </div>
+    <div class="row">
+      <div><label for="stab">Stability</label><input id="stab" type="number" min="0" max="1" step="0.05" value="0.5"></div>
+      <div><label for="sim">Similarity</label><input id="sim" type="number" min="0" max="1" step="0.05" value="0.75"></div>
+    </div>
+    <label for="ckey">Claude API key (optional)</label>
+    <input id="ckey" type="password" placeholder="sk-ant-..." autocomplete="off">
+    <label for="cmodel">Claude model</label>
+    <input id="cmodel" type="text" value="claude-sonnet-5">
+    <p class="hint">Used only to draft whiteboard boards from each scene's narration. Without it, drafts are built from the narration's sentences and you refine them by hand.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">2</span>Load your sources</h2>
+    <p class="hint" style="margin-top:0">Load a video, an audio file, or both. With both, the video gives the visuals and the audio file is used for transcription and original narration.</p>
+    <h3 class="sub">Video</h3>
+    <div class="row"><input id="file" type="file" accept="video/*"><button id="clearVideo" class="fit icon">Remove</button></div>
+    <label for="url">Or an Azure Blob URL (with SAS token)</label>
+    <div class="row"><input id="url" type="url" placeholder="https://account.blob.core.windows.net/container/lesson.mp4?sv=..."><button id="loadUrl" class="fit">Load</button></div>
+    <video id="preview" class="preview" controls playsinline></video>
+    <div class="row" style="margin-top:8px">
+      <button id="grabFrame" class="fit">Use current frame as slide background</button>
+    </div>
+    <h3 class="sub">Audio</h3>
+    <div class="row"><input id="afile" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"><button id="clearAudio" class="fit icon">Remove</button></div>
+    <label for="aurl">Or an Azure Blob URL (with SAS token)</label>
+    <div class="row"><input id="aurl" type="url" placeholder="https://account.blob.core.windows.net/container/lesson.mp3?sv=..."><button id="loadAudioUrl" class="fit">Load</button></div>
+    <audio id="previewAudio" controls style="width:100%;margin-top:10px"></audio>
+    <label for="audioStart">Audio begins at this point in the video (seconds)</label>
+    <input id="audioStart" type="number" step="0.1" value="0">
+    <p class="hint">Use this to line up a separately recorded narration with the video. Leave at 0 if they start together.</p>
+    <p class="hint">Blob URLs need CORS enabled on the storage account (allowed origin <code>*</code> or your local address, method GET).</p>
+    <p class="fmt" id="sourceNote">No sources loaded.</p>
+  </section>
+
+  <section>
+    <h2><span class="step">3</span>Split into scenes</h2>
+    <div class="row">
+      <div><label for="target">Scene length (seconds)</label><input id="target" type="number" min="5" max="120" value="20"></div>
+      <div><label for="sttModel">Transcription model</label><input id="sttModel" type="text" value="scribe_v1"></div>
+    </div>
+    <button id="transcribe" class="primary" style="margin-top:10px;width:100%">Transcribe video into scenes</button>
+    <p class="hint">Uses ElevenLabs speech-to-text on the audio file if one is loaded, otherwise on the video. With a video, each scene keeps its original footage. Audio only gives timed slide scenes. You can edit the narration before re-voicing.</p>
+    <label for="script">No video? Paste a script instead</label>
+    <textarea id="script" rows="6" placeholder="# Slide title&#10;- On-screen point&#10;- Another point&#10;Narration the voice will read.&#10;&#10;# Next slide&#10;Narration..."></textarea>
+    <p class="hint">Blank line = new scene. <code>#</code> = title, <code>-</code> = on-screen point, anything else is narration.</p>
+    <div class="row" style="margin-top:8px"><button id="fromScript">Add script as slide scenes</button></div>
+  </section>
+
+  <section>
+    <h2>Whiteboard style</h2>
+    <label for="wbFont">Handwriting</label>
+    <select id="wbFont"><option>Caveat</option><option>Kalam</option><option>Patrick Hand</option><option>Gochi Hand</option><option>Architects Daughter</option></select>
+    <div class="row">
+      <div><label for="wbInk">Marker</label><input id="wbInk" type="color" value="#1E2530" style="height:38px;padding:2px"></div>
+      <div><label for="wbAccent">Highlight marker</label><input id="wbAccent" type="color" value="#C8322B" style="height:38px;padding:2px"></div>
+      <div><label for="wbSpeed">Writing speed</label><select id="wbSpeed"><option value="0.8">Relaxed</option><option value="1" selected>Normal</option><option value="1.3">Quick</option></select></div>
+    </div>
+    <div class="check"><input type="checkbox" id="wbFrame" checked><label for="wbFrame" style="margin:0">Board frame</label></div>
+    <div class="check"><input type="checkbox" id="wbPen" checked><label for="wbPen" style="margin:0">Show marker while writing</label></div>
+  </section>
+
+  <section>
+    <h2>Slide style</h2>
+    <div class="row">
+      <div><label for="themeBg">Background</label><input id="themeBg" type="color" value="#0F2744" style="height:38px;padding:2px"></div>
+      <div><label for="themeText">Text</label><input id="themeText" type="color" value="#FFFFFF" style="height:38px;padding:2px"></div>
+      <div><label for="themeAccent">Accent</label><input id="themeAccent" type="color" value="#F2B632" style="height:38px;padding:2px"></div>
+    </div>
+    <label for="themeFont">Font</label>
+    <select id="themeFont">
+      <option>IBM Plex Sans</option><option>Arial</option><option>Verdana</option><option>Trebuchet MS</option><option>Georgia</option><option>Segoe UI</option>
+    </select>
+    <label for="bgFile">Background image (optional)</label>
+    <div class="row"><input id="bgFile" type="file" accept="image/*"><button id="clearBg" class="fit">Clear</button></div>
+  </section>
+</div>
+
+<div class="col">
+  <div class="monitor" id="monitor">
+    <canvas id="stage" width="1280" height="720"></canvas>
+    <div class="tally">REC</div>
+    <button id="stopBtn" style="position:absolute;top:22px;left:24px;padding:4px 10px;font-size:12px;background:rgba(0,0,0,.55);color:#fff;border-color:transparent">Stop</button>
+    <div class="statusbar" id="status">Ready. Keep this tab visible while rendering — browsers pause drawing in background tabs.</div>
+    <div class="progress"><i id="bar"></i></div>
+  </div>
+
+  <section>
+    <h2>Render</h2>
+    <label for="narration">Narration</label>
+    <select id="narration">
+      <option value="eleven">New ElevenLabs voice</option>
+      <option value="original">Original audio (from the audio file, or the video's own sound)</option>
+    </select>
+    <div class="row">
+      <div><label for="res">Resolution</label>
+        <select id="res"><option value="1280x720">1280 × 720</option><option value="1920x1080">1920 × 1080</option><option value="854x480">854 × 480</option></select></div>
+      <div><label for="fit">When voice and clip lengths differ</label>
+        <select id="fit"><option value="stretch">Adjust clip speed (0.5×–2×), then hold last frame</option><option value="normal">Normal speed, hold last frame</option></select></div>
+    </div>
+    <div class="row">
+      <div><label for="origVol">Original audio under new voice</label>
+        <select id="origVol"><option value="0">Off</option><option value="0.08">Very low</option><option value="0.2">Low</option></select></div>
+      <div><label for="gap">Pause after each scene (s)</label><input id="gap" type="number" min="0" max="3" step="0.1" value="0.4"></div>
+    </div>
+    <div class="check"><input type="checkbox" id="subs" checked><label for="subs" style="margin:0">Burn in subtitles</label></div>
+    <div class="row" style="margin-top:12px">
+      <button id="voiceAll">Generate all voices</button>
+      <button id="renderEach" class="rec">Render each scene</button>
+      <button id="renderAll" class="rec">Render full video</button>
+    </div>
+    <p class="fmt" id="mimeNote"></p>
+    <div id="outputs"></div>
+  </section>
+
+  <section>
+    <h2 style="justify-content:space-between">Scenes
+      <span class="row" style="flex:0 0 auto">
+        <button id="allBoard" class="fit icon">Make all whiteboard</button>
+        <button id="addSlide" class="fit icon">Add slide</button>
+        <button id="saveProj" class="fit icon">Save project</button>
+        <label class="fit" style="margin:0"><span class="icon" style="display:inline-block;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;padding:5px 9px">Open project</span><input id="loadProj" type="file" accept=".json" hidden></label>
+      </span>
+    </h2>
+    <details class="help"><summary>Whiteboard script syntax</summary>
+<pre># Heading                      big title, underlined
+- Bullet point                 written with a dot
+Plain line of text
+key: E = mc²                   large, double-underlined
+box: Remember this             note inside a box
+flow: Source -> Compiler -> Program
+cycle: Plan, Build, Test, Learn
+tree: Languages: Imperative, Functional, Logic
+---                            wipe the board, keep going
+
+Start a line with @"exact words" to draw it when the
+narrator says them, or @12.5 for seconds into the scene.
+Add [red] [blue] [green] [orange] [purple] for marker color.
+Example:  @"compiler" [blue] flow: Code -> Compiler -> Machine code</pre></details>
+    <div id="scenes"><div class="empty">Load a video and transcribe it, or paste a script, to create scenes.</div></div>
+  </section>
+</div>
+</main>
+
+<video id="rv" playsinline preload="auto"></video>
+<audio id="ra" preload="auto"></audio>
+
+<script>
+const API = 'https://api.elevenlabs.io/v1';
+const $ = s => document.querySelector(s);
+const state = { srcBlob:null, duration:0, audioBlob:null, audioDur:0, chunks:[], bgImg:null, busy:false, vNode:null, aNode:null, vGain:null, aGain:null, playing:null };
+let uid = 1;
+let actx = null;
+const getCtx = () => (actx ||= new (window.AudioContext || window.webkitAudioContext)());
+
+/* ---------- helpers ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = s => { s = Math.max(0, +s || 0); const m = Math.floor(s/60); return m + ':' + (s%60).toFixed(1).padStart(4,'0'); };
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+function setStatus(msg, frac){ $('#status').textContent = msg; if (frac != null) $('#bar').style.width = (clamp(frac,0,1)*100) + '%'; }
+const apiKey = () => $('#key').value.trim();
+const voiceId = () => $('#voiceManual').value.trim() || $('#voice').value;
+async function errText(r){
+  try { const j = await r.json(); const d = j.detail; return (d && (d.message || d.status || (typeof d === 'string' ? d : JSON.stringify(d)))) || JSON.stringify(j); }
+  catch { return r.status + ' ' + r.statusText; }
+}
+function need(cond, msg){ if (!cond) throw new Error(msg); }
+
+/* ---------- key storage ---------- */
+try {
+  const k = localStorage.getItem('revoice_key');
+  if (k) { $('#key').value = k; $('#remember').checked = true; }
+  const ck = localStorage.getItem('revoice_ckey'); if (ck) $('#ckey').value = ck;
+} catch {}
+function persistKey(){
+  try { if ($('#remember').checked) { localStorage.setItem('revoice_key', apiKey()); localStorage.setItem('revoice_ckey', $('#ckey').value.trim()); } else { localStorage.removeItem('revoice_key'); localStorage.removeItem('revoice_ckey'); } } catch {}
+}
+$('#remember').onchange = persistKey; $('#key').onchange = persistKey; $('#ckey').onchange = persistKey;
+
+/* ---------- voices ---------- */
+$('#loadVoices').onclick = async () => {
+  try {
+    need(apiKey(), 'Enter your ElevenLabs API key first.');
+    setStatus('Loading voices…');
+    const r = await fetch(API + '/voices', { headers:{ 'xi-api-key': apiKey() } });
+    if (!r.ok) throw new Error('Could not load voices: ' + await errText(r) + '. You can paste a voice ID instead.');
+    const j = await r.json();
+    $('#voice').innerHTML = j.voices.map(v => `<option value="${esc(v.voice_id)}">${esc(v.name)}${v.category ? ' (' + esc(v.category) + ')' : ''}</option>`).join('');
+    setStatus(`Loaded ${j.voices.length} voices.`);
+  } catch (e) { setStatus(e.message); }
+};
+
+/* ---------- sources: video and/or audio ---------- */
+const preview = $('#preview'), rv = $('#rv'), previewAudio = $('#previewAudio'), ra = $('#ra');
+const audioStart = () => +$('#audioStart').value || 0;
+const origMode = () => $('#narration').value === 'original';
+function waitMeta(el, what){
+  return new Promise((res, rej) => { el.onloadedmetadata = res; el.onerror = () => rej(new Error(`This ${what} format cannot be played in the browser. Try ${what === 'video' ? 'MP4 (H.264)' : 'MP3, WAV or M4A'}.`)); });
+}
+function sourceNote(){
+  const v = state.srcBlob ? `Video ${fmt(state.duration)}` : 'No video';
+  const a = state.audioBlob ? `audio ${fmt(state.audioDur)}` : 'no separate audio';
+  $('#sourceNote').textContent = `${v} · ${a}` + (state.audioBlob ? ' · transcription and original narration use the audio file' : '');
+}
+async function setVideo(blob){
+  state.srcBlob = blob;
+  const url = URL.createObjectURL(blob);
+  preview.src = url; rv.src = url;
+  await waitMeta(rv, 'video');
+  state.duration = rv.duration;
+  sourceNote(); setStatus(`Video loaded · ${fmt(rv.duration)} long.`);
+}
+async function setAudio(blob){
+  state.audioBlob = blob;
+  const url = URL.createObjectURL(blob);
+  previewAudio.src = url; ra.src = url;
+  await waitMeta(ra, 'audio');
+  state.audioDur = ra.duration;
+  sourceNote(); setStatus(`Audio loaded · ${fmt(ra.duration)} long.`);
+}
+async function fetchBlob(url, what){
+  setStatus(`Downloading ${what} from blob storage…`);
+  let r;
+  try { r = await fetch(url); }
+  catch { throw new Error('Download blocked. Enable CORS on the Azure storage account (Blob service → Resource sharing) and check the SAS token.'); }
+  if (!r.ok) throw new Error(`Download failed: ${r.status} ${r.statusText}. Check the SAS token.`);
+  return r.blob();
+}
+$('#file').onchange = e => { const f = e.target.files[0]; if (f) setVideo(f).catch(err => setStatus(err.message)); };
+$('#afile').onchange = e => { const f = e.target.files[0]; if (f) setAudio(f).catch(err => setStatus(err.message)); };
+$('#loadUrl').onclick = async () => { const u = $('#url').value.trim(); if (!u) return; try { await setVideo(await fetchBlob(u, 'video')); } catch (e) { setStatus(e.message); } };
+$('#loadAudioUrl').onclick = async () => { const u = $('#aurl').value.trim(); if (!u) return; try { await setAudio(await fetchBlob(u, 'audio')); } catch (e) { setStatus(e.message); } };
+$('#clearVideo').onclick = () => { state.srcBlob = null; state.duration = 0; preview.removeAttribute('src'); rv.removeAttribute('src'); preview.load(); rv.load(); $('#file').value = ''; sourceNote(); idleStage(); };
+$('#clearAudio').onclick = () => { state.audioBlob = null; state.audioDur = 0; previewAudio.removeAttribute('src'); ra.removeAttribute('src'); previewAudio.load(); ra.load(); $('#afile').value = ''; sourceNote(); };
+$('#grabFrame').onclick = () => {
+  if (!preview.videoWidth) return setStatus('Load a video and pause on the frame you want.');
+  const c = document.createElement('canvas'); c.width = preview.videoWidth; c.height = preview.videoHeight;
+  c.getContext('2d').drawImage(preview, 0, 0);
+  const img = new Image(); img.onload = () => { state.bgImg = img; idleStage(); setStatus('Frame set as slide background.'); };
+  img.src = c.toDataURL('image/jpeg', .9);
+};
+$('#bgFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => { state.bgImg = img; idleStage(); }; img.src = URL.createObjectURL(f); };
+$('#clearBg').onclick = () => { state.bgImg = null; $('#bgFile').value = ''; idleStage(); };
+
+/* ---------- transcription → scenes ---------- */
+$('#transcribe').onclick = async () => {
+  try {
+    need(apiKey(), 'Enter your ElevenLabs API key first.');
+    need(state.srcBlob || state.audioBlob, 'Load a video or an audio file first.');
+    lock(true);
+    setStatus('Uploading to ElevenLabs and transcribing… this can take a few minutes for long videos.', .1);
+    const fd = new FormData();
+    fd.append('model_id', $('#sttModel').value.trim() || 'scribe_v1');
+    const media = state.audioBlob || state.srcBlob;
+    fd.append('file', media, media.name || (state.audioBlob ? 'source.mp3' : 'source.mp4'));
+    const r = await fetch(API + '/speech-to-text', { method:'POST', headers:{ 'xi-api-key': apiKey() }, body: fd });
+    if (!r.ok) throw new Error('Transcription failed: ' + await errText(r));
+    const j = await r.json();
+    const words = (j.words || []).filter(w => !w.type || w.type === 'word');
+    need(words.length, 'No speech found in this video.');
+    const off = state.audioBlob ? audioStart() : 0;
+    const total = Math.max(state.duration, state.audioBlob ? state.audioDur + off : 0);
+    const scenes = groupWords(words, +$('#target').value || 20, off, total, state.srcBlob ? 'clip' : 'slide');
+    state.chunks = scenes.concat(state.chunks.filter(c => c.fromScript));
+    renderList(); idleStage();
+    setStatus(`Transcribed into ${scenes.length} scenes. Edit the narration if you like, then generate voices.`, 1);
+  } catch (e) { setStatus(e.message, 0); }
+  finally { lock(false); }
+};
+function groupWords(words, target, off, total, type){
+  const groups = []; let cur = [];
+  for (const w of words) {
+    cur.push(w);
+    const d = w.end - cur[0].start;
+    const endsSentence = /[.!?]["')\]]?$/.test(w.text.trim());
+    if ((d >= target && endsSentence) || d >= target * 1.8) { groups.push(cur); cur = []; }
+  }
+  if (cur.length) {
+    if (groups.length && (cur.at(-1).end - cur[0].start) < target * .35) groups.at(-1).push(...cur);
+    else groups.push(cur);
+  }
+  return groups.map((g, i) => {
+    const start = i === 0 ? Math.max(0, +off.toFixed(2)) : +(g[0].start + off).toFixed(2);
+    return {
+      id: uid++, type, timed: true, start,
+      end: i === groups.length - 1 ? +total.toFixed(2) : +(groups[i+1][0].start + off).toFixed(2),
+      title: '', points: '', board: '',
+      words: g.map(w => ({ w: w.text.trim(), t: +(w.start + off - start).toFixed(2) })),
+      text: g.map(w => w.text.trim()).join(' ').replace(/\s+([,.!?;:])/g, '$1')
+    };
+  });
+}
+
+/* ---------- script → slides ---------- */
+function parseBlock(block){
+  let title = '', pts = [], narr = [];
+  for (const raw of block.split('\n')) {
+    const l = raw.trim(); if (!l) continue;
+    if (l.startsWith('#')) title = l.replace(/^#+\s*/, '');
+    else if (/^[-*•]\s+/.test(l)) pts.push(l.replace(/^[-*•]\s+/, ''));
+    else narr.push(l);
+  }
+  return { id: uid++, type:'slide', start:0, end:0, title, points: pts.join('\n'), text: narr.join(' ') || [title, ...pts].join('. '), fromScript:true };
+}
+$('#fromScript').onclick = () => {
+  const blocks = $('#script').value.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+  if (!blocks.length) return setStatus('Paste a script first.');
+  state.chunks.push(...blocks.map(parseBlock)); renderList(); idleStage();
+  setStatus(`Added ${blocks.length} slide scenes.`);
+};
+$('#addSlide').onclick = () => { state.chunks.push({ id:uid++, type:'slide', start:0, end:0, title:'New slide', points:'', text:'' }); renderList(); };
+
+/* ---------- scene list UI ---------- */
+function renderList(){
+  const box = $('#scenes');
+  if (!state.chunks.length) { box.innerHTML = '<div class="empty">Load a video and transcribe it, or paste a script, to create scenes.</div>'; return; }
+  box.innerHTML = state.chunks.map((c, i) => `
+  <div class="scene ${c.type}" data-id="${c.id}">
+    <div class="scene-head">
+      <span class="num">Scene ${i+1}</span>
+      <select data-f="type" aria-label="Scene type"><option value="clip" ${c.type==='clip'?'selected':''}>Video clip</option><option value="slide" ${c.type==='slide'?'selected':''}>Slide</option><option value="board" ${c.type==='board'?'selected':''}>Whiteboard</option></select>
+      ${c.type === 'slide' ? `<input class="title" type="text" data-f="title" placeholder="Slide title" value="${esc(c.title)}">` : ''}
+      ${(c.type === 'clip' || c.timed)
+        ? `<label>From <input type="number" step="0.1" min="0" data-f="start" value="${c.start}"></label>
+           <label>To <input type="number" step="0.1" min="0" data-f="end" value="${c.end}"></label>
+           <span class="tc">${fmt(c.start)}–${fmt(c.end)}</span>
+           <button class="icon" data-a="seek">${c.type === 'clip' ? 'Show' : 'Listen'}</button><span class="sp"></span>`
+        : ''}
+      <button class="icon" data-a="up" aria-label="Move up">↑</button>
+      <button class="icon" data-a="down" aria-label="Move down">↓</button>
+      <button class="icon" data-a="del" aria-label="Delete scene">✕</button>
+    </div>
+    ${c.type === 'slide' ? `<textarea class="points" data-f="points" placeholder="On-screen points, one per line (optional)">${esc(c.points)}</textarea>` : ''}
+    ${c.type === 'board' ? `<textarea class="boardsrc" data-f="board" spellcheck="false" placeholder="# Heading&#10;@&quot;first key word&quot; - A point written on the board&#10;@&quot;process&quot; flow: Step one -> Step two -> Step three">${esc(c.board || '')}</textarea>` : ''}
+    <textarea data-f="text" rows="3" placeholder="Narration the voice will read">${esc(c.text)}</textarea>
+    <div class="scene-foot">
+      ${c.type === 'board' ? '<button data-a="draft">Draft board</button>' : ''}
+      <button data-a="preview">Preview</button>
+      <button data-a="voice">Generate voice</button>
+      <button data-a="play">Play voice</button>
+      <button data-a="render" class="rec">Render scene</button>
+      <span class="st"></span><a class="dl" hidden></a>
+    </div>
+  </div>`).join('');
+  state.chunks.forEach(updateCard);
+  lock(state.busy);
+}
+function card(c){ return document.querySelector(`.scene[data-id="${c.id}"]`); }
+function updateCard(c){
+  const el = card(c); if (!el) return;
+  const st = el.querySelector('.st'), dl = el.querySelector('.dl');
+  st.textContent = c.status || (c.audio ? `Voice ready · ${c.audio.dur.toFixed(1)}s` : '');
+  st.className = 'st' + (c.statusKind ? ' ' + c.statusKind : '');
+  if (c.outUrl) { dl.hidden = false; dl.href = c.outUrl; dl.download = c.outName; dl.textContent = 'Download ' + c.outName; } else dl.hidden = true;
+}
+function setChunkStatus(c, text, kind){ c.status = text; c.statusKind = kind || ''; updateCard(c); }
+const findChunk = el => state.chunks.find(c => c.id === +el.closest('.scene').dataset.id);
+
+$('#scenes').addEventListener('input', e => {
+  const f = e.target.dataset.f; if (!f) return;
+  const c = findChunk(e.target);
+  c[f] = (f === 'start' || f === 'end') ? +e.target.value : e.target.value;
+  if (f === 'type') { if (c.type === 'board' && c.start < c.end) c.timed = true; renderList(); if (c.type === 'board') showBoardStatic(c); }
+  if ((f === 'board' || f === 'text') && c.type === 'board') showBoardStatic(c);
+  if (f === 'start' || f === 'end') { const tc = card(c).querySelector('.tc'); if (tc) tc.textContent = `${fmt(c.start)}–${fmt(c.end)}`; }
+});
+$('#scenes').addEventListener('click', async e => {
+  const a = e.target.dataset.a; if (!a) return;
+  const c = findChunk(e.target), i = state.chunks.indexOf(c);
+  if (a === 'del') { state.chunks.splice(i, 1); renderList(); }
+  else if (a === 'up' && i > 0) { [state.chunks[i-1], state.chunks[i]] = [state.chunks[i], state.chunks[i-1]]; renderList(); }
+  else if (a === 'down' && i < state.chunks.length - 1) { [state.chunks[i+1], state.chunks[i]] = [state.chunks[i], state.chunks[i+1]]; renderList(); }
+  else if (a === 'seek') playSegment(c, c.type === 'clip' || !state.audioBlob ? preview : previewAudio, c.type === 'clip' || !state.audioBlob ? 0 : audioStart());
+  else if (a === 'voice') {
+    try { if (origMode()) { const n = getNarration(c); setChunkStatus(c, `Using original audio · ${n.dur.toFixed(1)}s`, 'good'); } else await ensureAudio(c, true); }
+    catch (err) { setChunkStatus(c, err.message, 'err'); }
+  }
+  else if (a === 'play') {
+    try {
+      state.playing?.pause();
+      if (origMode()) { getNarration(c); state.audioBlob ? playSegment(c, previewAudio, audioStart()) : playSegment(c, preview, 0); }
+      else { await ensureAudio(c); state.playing = new Audio(URL.createObjectURL(c.audio.blob)); state.playing.play(); }
+    } catch (err) { setChunkStatus(c, err.message, 'err'); }
+  }
+  else if (a === 'render') renderScenes([c], 'each');
+  else if (a === 'preview') previewScene(c);
+  else if (a === 'draft') {
+    lock(true);
+    try { setChunkStatus(c, 'Drafting board…'); c.board = await draftBoard(c); renderList(); showBoardStatic(c); setChunkStatus(c, 'Board drafted. Preview it and adjust the script.', 'good'); }
+    catch (err) { setChunkStatus(c, err.message, 'err'); }
+    finally { lock(false); }
+  }
+});
+
+function playSegment(c, el, off){
+  preview.pause(); previewAudio.pause();
+  el.currentTime = Math.max(0, c.start - off); el.play();
+  const stop = () => { if (el.currentTime >= c.end - off) { el.pause(); el.removeEventListener('timeupdate', stop); } };
+  el.addEventListener('timeupdate', stop);
+}
+/* Original-audio narration: the scene's own time range */
+function getNarration(c){
+  if (!origMode()) return c.audio;
+  need(state.audioBlob || state.srcBlob, 'Load a video or audio file to use original audio.');
+  need(c.end > c.start, `Scene ${state.chunks.indexOf(c) + 1} needs From/To times to use original audio.`);
+  return { dur: c.end - c.start, original: true };
+}
+
+function wordsFromAlignment(al){
+  const out = []; let cur = '', st = 0;
+  al.characters.forEach((ch, i) => {
+    if (/\s/.test(ch)) { if (cur) { out.push({ w: cur, t: st }); cur = ''; } }
+    else { if (!cur) st = al.character_start_times_seconds[i]; cur += ch; }
+  });
+  if (cur) out.push({ w: cur, t: st });
+  return out;
+}
+
+/* ---------- ElevenLabs TTS ---------- */
+async function ensureAudio(c, force){
+  need(apiKey(), 'Enter your ElevenLabs API key.');
+  need(voiceId(), 'Choose or paste a voice.');
+  need(c.text.trim(), 'This scene has no narration.');
+  const key = [voiceId(), $('#model').value, $('#stab').value, $('#sim').value, c.text].join('|');
+  if (c.audio && c.audio.key === key && !force) return c.audio;
+  setChunkStatus(c, 'Generating voice…');
+  const r = await fetch(`${API}/text-to-speech/${encodeURIComponent(voiceId())}/with-timestamps?output_format=mp3_44100_128`, {
+    method:'POST',
+    headers:{ 'xi-api-key': apiKey(), 'Content-Type':'application/json' },
+    body: JSON.stringify({ text: c.text, model_id: $('#model').value, voice_settings:{ stability:+$('#stab').value, similarity_boost:+$('#sim').value } })
+  });
+  if (!r.ok) throw new Error('Voice failed: ' + await errText(r));
+  const j = await r.json();
+  const bytes = Uint8Array.from(atob(j.audio_base64), ch => ch.charCodeAt(0));
+  const blob = new Blob([bytes], { type:'audio/mpeg' });
+  const buffer = await getCtx().decodeAudioData(bytes.buffer.slice(0));
+  c.audio = { key, blob, buffer, dur: buffer.duration, words: j.alignment ? wordsFromAlignment(j.alignment) : [] };
+  setChunkStatus(c, `Voice ready · ${buffer.duration.toFixed(1)}s`, 'good');
+  return c.audio;
+}
+$('#voiceAll').onclick = async () => {
+  if (origMode()) return setStatus('Narration is set to original audio, so no voices are needed.');
+  lock(true);
+  try {
+    for (let i = 0; i < state.chunks.length; i++) {
+      setStatus(`Generating voice ${i+1} of ${state.chunks.length}…`, i / state.chunks.length);
+      await ensureAudio(state.chunks[i]);
+    }
+    setStatus('All voices ready.', 1);
+  } catch (e) { setStatus(e.message); }
+  finally { lock(false); }
+};
+
+/* ---------- drawing ---------- */
+const stage = $('#stage'), g = stage.getContext('2d');
+function wrap(text, maxW){
+  const words = String(text).split(/\s+/).filter(Boolean), lines = []; let line = '';
+  for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
+  if (line) lines.push(line); return lines;
+}
+function drawCover(img, W, H){
+  const iw = img.naturalWidth || img.videoWidth, ih = img.naturalHeight || img.videoHeight; if (!iw) return;
+  const s = Math.max(W/iw, H/ih); g.drawImage(img, (W - iw*s)/2, (H - ih*s)/2, iw*s, ih*s);
+}
+function drawContain(v, W, H){
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  if (!v.videoWidth) return;
+  const s = Math.min(W/v.videoWidth, H/v.videoHeight); g.drawImage(v, (W - v.videoWidth*s)/2, (H - v.videoHeight*s)/2, v.videoWidth*s, v.videoHeight*s);
+}
+function drawSlide(c, t, dur){
+  const W = stage.width, H = stage.height, s = W / 1280, font = $('#themeFont').value;
+  const bg = $('#themeBg').value, fg = $('#themeText').value, ac = $('#themeAccent').value;
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  if (state.bgImg) { drawCover(state.bgImg, W, H); g.globalAlpha = .72; g.fillStyle = bg; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  const x = 110*s; let y = 150*s;
+  if (c.title) {
+    g.fillStyle = ac; g.fillRect(80*s, 98*s, 8*s, 66*s);
+    g.fillStyle = fg; g.font = `700 ${56*s}px "${font}", sans-serif`; g.textBaseline = 'alphabetic';
+    for (const l of wrap(c.title, W - 220*s).slice(0, 2)) { g.fillText(l, x, y); y += 66*s; }
+    y += 30*s;
+  }
+  const pts = (c.points || '').split('\n').map(p => p.trim()).filter(Boolean);
+  if (pts.length) {
+    const step = (dur * .85) / pts.length;
+    g.font = `400 ${34*s}px "${font}", sans-serif`;
+    pts.forEach((p, i) => {
+      const a = clamp((t - i*step) / .4, 0, 1); if (a <= 0) return;
+      g.globalAlpha = a; g.fillStyle = ac; g.fillRect(x, y - 22*s, 12*s, 12*s);
+      g.fillStyle = fg;
+      for (const l of wrap(p, W - 300*s)) { g.fillText(l, x + 34*s, y); y += 46*s; }
+      y += 14*s; g.globalAlpha = 1;
+    });
+  } else if (!$('#subs').checked && c.text) {
+    g.fillStyle = fg; g.font = `400 ${34*s}px "${font}", sans-serif`;
+    for (const l of wrap(c.text, W - 260*s).slice(0, 9)) { g.fillText(l, x, y); y += 48*s; }
+  }
+}
+function cues(text, dur){
+  const sentences = text.match(/[^.!?]+[.!?]*["')]*\s*/g) || [text], pieces = [];
+  for (const sen of sentences) {
+    const words = sen.trim().split(/\s+/); let cur = '';
+    for (const w of words) { if ((cur + ' ' + w).length > 90 && cur) { pieces.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; }
+    if (cur) pieces.push(cur);
+  }
+  const total = pieces.reduce((n, p) => n + p.length, 0) || 1; let acc = 0;
+  return pieces.map(p => { const t0 = acc / total * dur; acc += p.length; return { t0, t1: acc / total * dur, p }; });
+}
+function drawSubs(text){
+  if (!text) return;
+  const W = stage.width, H = stage.height, s = W / 1280;
+  g.font = `500 ${30*s}px "${$('#themeFont').value}", sans-serif`;
+  const lines = wrap(text, W * .78).slice(0, 2), lh = 40*s, pad = 14*s;
+  const bw = Math.max(...lines.map(l => g.measureText(l).width)) + pad*2, bh = lines.length*lh + pad*1.4;
+  const bx = (W - bw)/2, by = H - bh - 36*s;
+  g.fillStyle = 'rgba(0,0,0,.66)'; g.beginPath(); g.roundRect ? g.roundRect(bx, by, bw, bh, 8*s) : g.rect(bx, by, bw, bh); g.fill();
+  g.fillStyle = '#fff'; g.textAlign = 'center';
+  lines.forEach((l, i) => g.fillText(l, W/2, by + pad + (i+1)*lh - 10*s));
+  g.textAlign = 'left';
+}
+function idleStage(){
+  const [W, H] = $('#res').value.split('x').map(Number); stage.width = W; stage.height = H;
+  const first = state.chunks[0];
+  if (first && first.type === 'board') { showBoardStatic(first); return; }
+  if (first && first.type === 'slide') drawSlide(first, 99, 1);
+  else if (first && rv.videoWidth) { rv.currentTime = first.start; rv.onseeked = () => { drawContain(rv, W, H); rv.onseeked = null; }; }
+  else { g.fillStyle = '#111820'; g.fillRect(0, 0, W, H); g.fillStyle = '#7C8896'; g.font = `500 ${28*W/1280}px "IBM Plex Sans", sans-serif`; g.textAlign = 'center'; g.fillText('Your rendered video appears here', W/2, H/2); g.textAlign = 'left'; }
+}
+['#themeBg','#themeText','#themeAccent','#themeFont','#res','#subs','#wbFont','#wbInk','#wbAccent','#wbFrame'].forEach(s => $(s).addEventListener('change', () => loadFonts().then(idleStage)));
+
+/* ---------- whiteboard engine ---------- */
+const INK = { black:'#1E2530', blue:'#1F4FB5', red:'#C8322B', green:'#1E7B45', orange:'#C8640F', purple:'#6B3FB8' };
+const inkOf = (c, fb) => !c ? fb : (INK[c.toLowerCase()] || (c[0] === '#' ? c : fb));
+const norm = w => String(w).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+function rng(seed){ return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
+
+function parseBoard(src){
+  const els = [];
+  for (const raw of String(src || '').split('\n')) {
+    let l = raw.trim(), m, at = null, color = null;
+    if (!l) continue;
+    if ((m = l.match(/^@(\d+(?:\.\d+)?)s?\s*/))) { at = { sec: +m[1] }; l = l.slice(m[0].length); }
+    else if ((m = l.match(/^@["“]([^"”]+)["”]\s*/))) { at = { phrase: m[1] }; l = l.slice(m[0].length); }
+    if ((m = l.match(/^\[(\w+|#[0-9a-f]{3,6})\]\s*/i))) { color = m[1]; l = l.slice(m[0].length); }
+    let el;
+    if (/^-{3,}$/.test(l)) el = { k:'wipe' };
+    else if (l.startsWith('#')) el = { k:'heading', text: l.replace(/^#+\s*/, '') };
+    else if (/^[-*•]\s+/.test(l)) el = { k:'bullet', text: l.replace(/^[-*•]\s+/, '') };
+    else if ((m = l.match(/^(flow|cycle|tree|box|key|text):\s*(.*)$/i))) el = { k: m[1].toLowerCase(), text: m[2] };
+    else el = { k:'text', text: l };
+    el.at = at; el.color = color; els.push(el);
+  }
+  return els;
+}
+
+/* hand-drawn polyline: densified with a gentle bow and wobble */
+function handPts(pts, R, amp = 1.3){
+  const out = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x1, y1] = pts[i], [x2, y2] = pts[i+1];
+    const L = Math.hypot(x2 - x1, y2 - y1) || 1, n = Math.max(2, Math.ceil(L / 9));
+    const nx = -(y2 - y1) / L, ny = (x2 - x1) / L, bow = (R() - .5) * amp * 3, ph = R() * 6.28, fr = .25 + R() * .25;
+    for (let j = i ? 1 : 0; j <= n; j++) {
+      const f = j / n, off = bow * Math.sin(Math.PI * f) + amp * .45 * Math.sin(j * fr + ph);
+      out.push([x1 + (x2 - x1) * f + nx * off, y1 + (y2 - y1) * f + ny * off]);
+    }
+  }
+  return out;
+}
+const pathLen = p => p.reduce((L, q, i) => i ? L + Math.hypot(q[0] - p[i-1][0], q[1] - p[i-1][1]) : 0, 0);
+function ellipsePts(cx, cy, rx, ry, R){
+  const a0 = -2.2 + R() * .4, pts = [];
+  for (let i = 0; i <= 52; i++) { const a = a0 + i / 52 * (Math.PI * 2 + .35), k = 1 + (R() - .5) * .03; pts.push([cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]); }
+  return pts;
+}
+const rectPts = (x, y, w, h) => [[x + 4, y + 1], [x + w, y - 1], [x + w + 1, y + h], [x - 1, y + h + 1], [x + 1, y - 2], [x + 16, y]];
+
+function buildBoard(c, dur, words){
+  const font = $('#wbFont').value, ink = $('#wbInk').value, acc = $('#wbAccent').value;
+  const R = rng((c.id || 1) * 9973 + (c.board || '').length);
+  const X0 = 96, X1 = 1184, Y0 = 70, Y1 = 720 - ($('#subs').checked ? 130 : 60), CW = X1 - X0;
+  const F = sz => `${sz}px "${font}", cursive`;
+  const meas = (t, sz) => { g.font = F(sz); return g.measureText(t).width; };
+  const lines = (t, sz, w) => { g.font = F(sz); return wrap(t, w); };
+  const ops = []; let y = Y0, page = 0;
+  const P = (pts, color, width = 4, amp) => { const p = handPts(pts, R, amp); ops.push({ k:'path', p, color, width, len: pathLen(p), page }); };
+  const T = (str, x, yb, sz, color) => ops.push({ k:'text', str, x, y: yb, size: sz, color, font: F(sz), w: meas(str, sz), page, tilt: (R() - .5) * .012 });
+  const room = h => { if (y + h > Y1 && y > Y0) { ops.push({ k:'wipe', page }); page++; y = Y0; } };
+  const arrow = (x1, y1, x2, y2, color) => {
+    P([[x1, y1], [x2, y2]], color, 3.5);
+    const a = Math.atan2(y2 - y1, x2 - x1), L = 16;
+    P([[x2 - L * Math.cos(a - .5), y2 - L * Math.sin(a - .5)], [x2, y2], [x2 - L * Math.cos(a + .5), y2 - L * Math.sin(a + .5)]], color, 3.5, .4);
+  };
+  const els = parseBoard(c.board);
+  const marks = [];
+
+  for (const el of els) {
+    const col = inkOf(el.color, ink), hi = inkOf(el.color, acc), first = ops.length;
+    if (el.k === 'wipe') { if (y > Y0) { ops.push({ k:'wipe', page }); page++; y = Y0; } }
+    else if (el.k === 'heading') {
+      const ls = lines(el.text, 62, CW); room(ls.length * 72 + 30);
+      let mw = 0; for (const l of ls) { T(l, X0, y + 58, 62, col); mw = Math.max(mw, meas(l, 62)); y += 72; }
+      P([[X0 - 6, y + 4], [X0 + mw + 14, y - 1]], hi, 5); y += 36;
+    }
+    else if (el.k === 'text') {
+      const ls = lines(el.text, 42, CW); room(ls.length * 54 + 10);
+      for (const l of ls) { T(l, X0, y + 42, 42, col); y += 54; } y += 10;
+    }
+    else if (el.k === 'bullet') {
+      const ls = lines(el.text, 40, CW - 46); room(ls.length * 52 + 10);
+      P(ellipsePts(X0 + 12, y + 28, 6, 6, R), col, 4, .2);
+      ls.forEach(l => { T(l, X0 + 42, y + 40, 40, col); y += 52; }); y += 10;
+    }
+    else if (el.k === 'key') {
+      const ls = lines(el.text, 54, CW - 120); room(ls.length * 64 + 44);
+      let mw = 0; for (const l of ls) { const w = meas(l, 54); mw = Math.max(mw, w); T(l, 640 - w / 2, y + 52, 54, col); y += 64; }
+      P([[640 - mw / 2 - 12, y + 4], [640 + mw / 2 + 12, y + 1]], hi, 5);
+      P([[640 - mw / 2 + 8, y + 15], [640 + mw / 2 - 4, y + 13]], hi, 4); y += 42;
+    }
+    else if (el.k === 'box') {
+      const ls = lines(el.text, 38, CW - 120), mw = Math.max(...ls.map(l => meas(l, 38)));
+      const bw = mw + 52, bh = ls.length * 48 + 30; room(bh + 24);
+      P(rectPts(X0, y, bw, bh), hi, 4);
+      ls.forEach((l, i) => T(l, X0 + 26, y + 50 + i * 48, 38, col)); y += bh + 24;
+    }
+    else if (el.k === 'flow') {
+      const nodes = el.text.split(/\s*(?:->|→)\s*/).filter(Boolean); let sz = 36, ws, tot;
+      const calc = () => { ws = nodes.map(n => meas(n, sz)); tot = ws.reduce((a, w) => a + w + 44, 0) + (nodes.length - 1) * 84; };
+      calc(); while (tot > CW && sz > 20) { sz -= 2; calc(); }
+      const bh = sz * 2 + 12; room(bh + 34);
+      let x = 640 - tot / 2;
+      nodes.forEach((n, i) => {
+        const bw = ws[i] + 44; P(rectPts(x, y, bw, bh), col, 4); T(n, x + 22, y + bh / 2 + sz * .33, sz, col);
+        if (i < nodes.length - 1) arrow(x + bw + 12, y + bh / 2, x + bw + 72, y + bh / 2, hi);
+        x += bw + 84;
+      });
+      y += bh + 34;
+    }
+    else if (el.k === 'cycle') {
+      const nodes = el.text.split(/\s*,\s*/).filter(Boolean).slice(0, 6), n = nodes.length, sz = 34;
+      room(320); const cx = 640, cy = y + 150, rx = 330, ry = 112, d = n <= 4 ? .42 : .3;
+      const ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
+      const arc = i => {
+        const a1 = ang(i) + d, a2 = ang(i + 1) - d, pts = [];
+        for (let k = 0; k <= 16; k++) { const a = a1 + (a2 - a1) * k / 16; pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
+        P(pts, hi, 3.5);
+        const [xa, ya] = pts[15], [xb, yb] = pts[16], a = Math.atan2(yb - ya, xb - xa), L = 16;
+        P([[xb - L * Math.cos(a - .5), yb - L * Math.sin(a - .5)], [xb, yb], [xb - L * Math.cos(a + .5), yb - L * Math.sin(a + .5)]], hi, 3.5, .4);
+      };
+      nodes.forEach((nd, i) => {
+        const px = cx + Math.cos(ang(i)) * rx, py = cy + Math.sin(ang(i)) * ry, w = meas(nd, sz);
+        T(nd, px - w / 2, py + sz * .33, sz, col); P(ellipsePts(px, py, w / 2 + 24, sz * .95, R), col, 3.5, .6);
+        if (n > 1) arc(i);
+      });
+      y += 320;
+    }
+    else if (el.k === 'tree') {
+      const [root, rest = ''] = el.text.split(/:(.*)/s), kids = rest.split(/\s*,\s*/).filter(Boolean).slice(0, 5), sz = 34;
+      room(240);
+      const rw = meas(root.trim(), sz) + 44, bh = sz * 2 + 8, rx0 = 640 - rw / 2;
+      P(rectPts(rx0, y, rw, bh), col, 4); T(root.trim(), rx0 + 22, y + bh / 2 + sz * .33, sz, col);
+      const slot = CW / Math.max(1, kids.length), ky = y + 150;
+      kids.forEach((k, i) => {
+        const kx = X0 + slot * (i + .5); let s2 = sz; while (meas(k, s2) + 40 > slot - 16 && s2 > 20) s2 -= 2;
+        const kw = meas(k, s2) + 40, kh = s2 * 2 + 8;
+        P([[640, y + bh + 6], [kx, ky - 8]], hi, 3.5);
+        P(rectPts(kx - kw / 2, ky, kw, kh), col, 4); T(k, kx - kw / 2 + 20, ky + kh / 2 + s2 * .33, s2, col);
+      });
+      y += 240;
+    }
+    if (ops.length > first) marks.push({ at: el.at, i0: first, i1: ops.length });
+  }
+
+  /* timing: natural writing speed, pinned to spoken words where anchored */
+  const speed = +$('#wbSpeed').value || 1;
+  const nat = op => op.k === 'wipe' ? 1.1 : op.k === 'text' ? (op.str.length / 13 + .12) / speed : (op.len / 850 + .08) / speed;
+  const ws = (words || []).map(w => ({ n: norm(w.w), t: w.t }));
+  let cursor = 0, warn = [];
+  const resolve = at => {
+    if (!at) return null;
+    if (at.sec != null) return at.sec;
+    const want = at.phrase.split(/\s+/).map(norm).filter(Boolean);
+    for (let s = 0; s < 2; s++) {
+      for (let i = s ? 0 : cursor; i <= ws.length - want.length; i++) {
+        if (want.every((w, k) => ws[i + k].n === w)) { cursor = i + want.length; return ws[i].t; }
+      }
+    }
+    warn.push(at.phrase); return null;
+  };
+  const groups = [];
+  marks.forEach((m, idx) => {
+    const t = resolve(m.at);
+    if (idx === 0 || t != null) groups.push({ T0: Math.max(t ?? 0, groups.length ? groups.at(-1).T0 : 0), ms: [m] });
+    else groups.at(-1).ms.push(m);
+  });
+  const end = Math.max(1, dur * .94);
+  let tPrev = 0;
+  groups.forEach((gp, gi) => {
+    const start = Math.max(gp.T0, tPrev);
+    const T1 = Math.max(start + .4, gi < groups.length - 1 ? groups[gi + 1].T0 : end);
+    const list = gp.ms.flatMap(m => ops.slice(m.i0, m.i1));
+    const N = list.reduce((a, o) => a + nat(o), 0) || 1, sc = clamp((T1 - start) / N, .3, 1.35);
+    let t = start; for (const o of list) { o.t0 = t; t += nat(o) * sc; o.t1 = t; }
+    tPrev = t;
+  });
+  return { ops, end: ops.length ? Math.max(...ops.map(o => o.t1)) : 0, warn };
+}
+
+const boardSmudges = (() => { const R = rng(42), a = []; for (let i = 0; i < 9; i++) a.push([R() * 1280, R() * 720, 80 + R() * 220, 30 + R() * 90, R() * 3]); return a; })();
+function drawBoardBg(){
+  g.fillStyle = '#F8F8F4'; g.fillRect(0, 0, 1280, 720);
+  g.fillStyle = 'rgba(110,120,130,.016)';
+  for (const [x, y, rx, ry, r] of boardSmudges) { g.beginPath(); g.ellipse(x, y, rx, ry, r, 0, Math.PI * 2); g.fill(); }
+  if ($('#wbFrame').checked) {
+    g.lineWidth = 18; g.strokeStyle = '#B4BAC2'; g.strokeRect(9, 9, 1262, 702);
+    g.lineWidth = 2; g.strokeStyle = '#E4E7EA'; g.strokeRect(19, 19, 1242, 682);
+    g.lineWidth = 2; g.strokeStyle = '#8E959E'; g.strokeRect(1, 1, 1278, 718);
+  }
+}
+function strokePart(op, p){
+  const target = op.len * p; let acc = 0, last = op.p[0];
+  g.strokeStyle = op.color; g.lineWidth = op.width; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(last[0], last[1]);
+  for (let i = 1; i < op.p.length; i++) {
+    const q = op.p[i], L = Math.hypot(q[0] - last[0], q[1] - last[1]);
+    if (acc + L >= target) { const f = (target - acc) / (L || 1); last = [last[0] + (q[0] - last[0]) * f, last[1] + (q[1] - last[1]) * f]; g.lineTo(last[0], last[1]); break; }
+    acc += L; last = q; g.lineTo(q[0], q[1]);
+  }
+  g.stroke(); return last;
+}
+function textPart(op, p, t){
+  g.save(); g.translate(op.x, op.y); g.rotate(op.tilt); g.font = op.font; g.fillStyle = op.color;
+  if (p >= 1) { g.fillText(op.str, 0, 0); g.restore(); return null; }
+  g.beginPath(); g.rect(-12, -op.size * 1.3, op.w * p + 12, op.size * 1.9); g.clip(); g.fillText(op.str, 0, 0); g.restore();
+  return [op.x + op.w * p, op.y - op.size * .28 + Math.sin(t * 34) * op.size * .13];
+}
+function drawMarker(x, y, color){
+  g.save(); g.translate(x, y); g.rotate(.5);
+  g.shadowColor = 'rgba(0,0,0,.22)'; g.shadowBlur = 14; g.shadowOffsetX = 10; g.shadowOffsetY = 12;
+  g.fillStyle = '#2E343C'; g.beginPath(); g.roundRect ? g.roundRect(-12, -178, 24, 150, 6) : g.rect(-12, -178, 24, 150); g.fill();
+  g.shadowColor = 'transparent';
+  g.fillStyle = color; g.fillRect(-13, -188, 26, 34);
+  g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(-7, -150, 4, 110);
+  g.fillStyle = '#D9DDE1'; g.fillRect(-9, -30, 18, 14);
+  g.fillStyle = color; g.beginPath(); g.moveTo(-6, -16); g.lineTo(6, -16); g.lineTo(1.5, 0); g.lineTo(-1.5, 0); g.closePath(); g.fill();
+  g.restore();
+}
+function drawEraser(x, y){
+  g.save(); g.translate(x, y); g.rotate(-.08);
+  g.shadowColor = 'rgba(0,0,0,.2)'; g.shadowBlur = 12; g.shadowOffsetY = 8;
+  g.fillStyle = '#B98552'; g.fillRect(-70, -34, 140, 44); g.shadowColor = 'transparent';
+  g.fillStyle = '#3B4047'; g.fillRect(-70, 10, 140, 18);
+  g.restore();
+}
+function drawBoard(plan, t, penOn = $('#wbPen').checked){
+  const s = stage.width / 1280;
+  g.setTransform(s, 0, 0, s, 0, 0);
+  drawBoardBg();
+  let page = 0, wipe = null;
+  for (const op of plan.ops) {
+    if (op.t0 > t) break;
+    if (op.k === 'wipe') { if (t >= op.t1) page = op.page + 1; else { page = op.page; wipe = op; } }
+    else page = op.page;
+  }
+  let pen = null, penColor = null;
+  for (const op of plan.ops) {
+    if (op.page !== page || op.k === 'wipe' || op.t0 > t) continue;
+    const p = clamp((t - op.t0) / (op.t1 - op.t0 || 1), 0, 1);
+    const at = op.k === 'text' ? textPart(op, p, t) : strokePart(op, p);
+    if (p < 1) { pen = at; penColor = op.color; }
+  }
+  if (wipe) {
+    const p = clamp((t - wipe.t0) / (wipe.t1 - wipe.t0), 0, 1), x = p * 1340 - 30;
+    g.save(); g.beginPath(); g.rect(0, 0, Math.max(0, Math.round(x)), 720); g.clip(); drawBoardBg(); g.restore();
+    drawEraser(x, 360 + Math.sin(p * 26) * 250);
+  } else if (penOn && pen) drawMarker(pen[0], pen[1], penColor);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+}
+function showBoardStatic(c){
+  if (state.busy) return;
+  const [W, H] = $('#res').value.split('x').map(Number); stage.width = W; stage.height = H;
+  const dur = c.audio?.dur || (c.end > c.start ? c.end - c.start : 20);
+  const plan = buildBoard(c, dur, origMode() ? c.words : (c.audio?.words || c.words));
+  const lastPage = plan.ops.filter(o => o.k === 'wipe').length;
+  drawBoard(plan, plan.end + 1, false);
+  const pages = lastPage + 1;
+  setStatus(`Scene ${state.chunks.indexOf(c) + 1} board${pages > 1 ? ` (showing board ${pages} of ${pages})` : ''}.` + (plan.warn.length ? ` Words not found in narration: ${plan.warn.map(w => '"' + w + '"').join(', ')}.` : ' All anchors matched.'));
+}
+
+/* ---------- drafting boards ---------- */
+const STOP = new Set('this that with from have will your they them then than there their what when which while about into also just very more most some such only each other these those because would could should being been were where here make made like over under after before between the and for are but not you all can its our out use using'.split(' '));
+function draftHeuristic(c){
+  const sents = (c.text.match(/[^.!?]+[.!?]*/g) || []).map(x => x.trim()).filter(Boolean);
+  const short = (x, n) => x.replace(/[.!?,;:]+$/, '').split(/\s+/).slice(0, n).join(' ');
+  const kw = x => (x.split(/\s+/).map(w => w.replace(/[^\p{L}\p{N}'-]/gu, '')).find(w => w.length > 3 && !STOP.has(w.toLowerCase())) || '');
+  const out = [`# ${c.title || short(sents[0] || 'Key idea', 6)}`];
+  sents.slice(c.title ? 0 : 1, 7).forEach(x => { const k = kw(x); out.push(`${k ? `@"${k}" ` : ''}- ${short(x, 8)}`); });
+  return out.join('\n');
+}
+async function draftClaude(c){
+  const dur = c.audio?.dur || (c.end > c.start ? c.end - c.start : null);
+  const system = `You design whiteboard animation boards for short narrated lesson scenes. Reply with ONLY the board script: no commentary, no code fences.
+Syntax, one element per line, drawn top to bottom in order:
+# Heading
+- bullet point
+plain line of text
+key: one key idea or formula, drawn large and underlined
+box: a short callout inside a box
+flow: Step A -> Step B -> Step C      (2 to 5 short nodes)
+cycle: A, B, C, D                     (3 to 6 short nodes in a loop)
+tree: Root: Child one, Child two      (2 to 5 children)
+---                                   (wipe the board and continue on a clean board)
+Prefix a line with [red], [blue], [green], [orange] or [purple] to change marker color.
+Prefix a line with @"word or short phrase" copied exactly from the narration so it is drawn when the narrator says it.
+Rules: board text is short notes, never the narration itself; keep lines under 7 words; use flow, cycle or tree when the idea has steps, a loop or a hierarchy; at most 7 elements per board, then --- if more are needed; start almost every line with an @"..." anchor, anchors in narration order, each anchor copied exactly from the narration.`;
+  const user = `Scene narration${dur ? ` (${dur.toFixed(0)} seconds)` : ''}:\n${c.text}` + (c.title ? `\n\nSlide title: ${c.title}` : '') + (c.points ? `\nOn-screen points:\n${c.points}` : '');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{ 'x-api-key': $('#ckey').value.trim(), 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true', 'content-type':'application/json' },
+    body: JSON.stringify({ model: $('#cmodel').value.trim() || 'claude-sonnet-5', max_tokens: 1000, system, messages:[{ role:'user', content: user }] })
+  });
+  if (!r.ok) { let m = r.status + ' ' + r.statusText; try { m = (await r.json()).error?.message || m; } catch {} throw new Error('Claude draft failed: ' + m); }
+  const j = await r.json();
+  return j.content.filter(b => b.type === 'text').map(b => b.text).join('\n').replace(/```\w*\n?|```/g, '').trim();
+}
+async function draftBoard(c){
+  need(c.text.trim() || c.title, 'This scene has no narration to draft from.');
+  return $('#ckey').value.trim() ? draftClaude(c) : draftHeuristic(c);
+}
+$('#allBoard').onclick = async () => {
+  if (!state.chunks.length) return setStatus('Create scenes first.');
+  lock(true);
+  try {
+    for (let i = 0; i < state.chunks.length; i++) {
+      const c = state.chunks[i];
+      if (c.type === 'clip' || c.end > c.start) c.timed = c.end > c.start;
+      c.type = 'board';
+      if (!(c.board || '').trim()) { setStatus(`Drafting board ${i + 1} of ${state.chunks.length}…`, i / state.chunks.length); c.board = await draftBoard(c); }
+    }
+    lock(false); renderList(); idleStage();
+    setStatus('Every scene is now a whiteboard. Preview each one and adjust its script.', 1);
+  } catch (e) { setStatus(e.message); }
+  finally { lock(false); }
+};
+
+/* ---------- recording ---------- */
+function pickMime(){
+  const c = ['video/mp4;codecs=avc1.640028,mp4a.40.2','video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  return c.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+}
+const MIME = pickMime(), EXT = MIME.includes('mp4') ? 'mp4' : 'webm';
+$('#mimeNote').textContent = !MIME ? 'This browser cannot record video. Use a current version of Chrome or Edge.'
+  : EXT === 'mp4' ? 'Output format: MP4 (H.264 + AAC).'
+  : 'This browser records WebM only. For MP4 output, use a current version of Chrome or Edge.';
+
+function seek(v, t){ return new Promise(res => { if (Math.abs(v.currentTime - t) < .01) return res(); const done = () => { v.removeEventListener('seeked', done); res(); }; v.addEventListener('seeked', done); v.currentTime = t; setTimeout(done, 3000); }); }
+
+async function playScene(c, dest){
+  const ac = getCtx(), W = stage.width, H = stage.height;
+  const orig = origMode(), sep = !!state.audioBlob, A = audioStart();
+  const nar = getNarration(c);
+  const dur = nar.dur, subs = $('#subs').checked, cl = cues(c.text, dur);
+  const plan = c.type === 'board' ? buildBoard(c, dur, orig ? c.words : nar.words) : null;
+  const total = Math.max(dur, plan ? plan.end + .3 : 0) + (+$('#gap').value || 0);
+  // the video plays for clip scenes, and for original narration taken from the video's own sound
+  const useVideo = c.type === 'clip' || (orig && !sep);
+  if (useVideo) {
+    need(state.srcBlob, `Scene ${state.chunks.indexOf(c) + 1} needs the source video, which is not loaded.`);
+    await seek(rv, c.start);
+    const seg = Math.max(.1, c.end - c.start);
+    rv.playbackRate = !orig && $('#fit').value === 'stretch' ? clamp(seg / dur, .5, 2) : 1;
+  }
+  // the separate audio file plays for original narration, or quietly under clips
+  const aFrom = c.start - A;
+  const useAudio = sep && (orig || c.type === 'clip') && aFrom >= 0 && aFrom < state.audioDur;
+  if (useAudio) { await seek(ra, aFrom); ra.playbackRate = useVideo ? rv.playbackRate : 1; }
+  if (c.type === 'clip') drawContain(rv, W, H); else if (plan) drawBoard(plan, 0); else drawSlide(c, 0, dur);
+  if (useVideo) await rv.play();
+  if (useAudio) await ra.play();
+  let t0 = ac.currentTime, src = null;
+  if (!orig) { src = ac.createBufferSource(); src.buffer = nar.buffer; src.connect(dest); t0 = ac.currentTime + .05; src.start(t0); }
+  await new Promise(resolve => {
+    const frame = () => {
+      const t = ac.currentTime - t0;
+      if (state.abort) { try { src && src.stop(); } catch {} return resolve(); }
+      if (useVideo && !rv.paused && rv.currentTime >= c.end) rv.pause();
+      if (useAudio && !ra.paused && ra.currentTime >= c.end - A) ra.pause();
+      if (orig && t >= dur) { rv.pause(); ra.pause(); }
+      if (c.type === 'clip') drawContain(rv, W, H);
+      else if (plan) drawBoard(plan, Math.max(0, t));
+      else drawSlide(c, Math.max(0, t), dur);
+      if (subs && t >= 0 && t <= dur) { const q = cl.find(q => t >= q.t0 && t < q.t1); drawSubs(q && q.p); }
+      if (t >= total) return resolve();
+      requestAnimationFrame(frame);
+    };
+    frame();
+  });
+  rv.pause(); ra.pause();
+}
+
+function setupGains(dest){
+  const ac = getCtx();
+  if (!state.vNode) { state.vNode = ac.createMediaElementSource(rv); state.vGain = ac.createGain(); state.vNode.connect(state.vGain); }
+  if (!state.aNode) { state.aNode = ac.createMediaElementSource(ra); state.aGain = ac.createGain(); state.aNode.connect(state.aGain); }
+  const level = origMode() ? 1 : +$('#origVol').value, sep = !!state.audioBlob;
+  state.vGain.disconnect(); state.vGain.gain.value = sep ? 0 : level; state.vGain.connect(dest);
+  state.aGain.disconnect(); state.aGain.gain.value = sep ? level : 0; state.aGain.connect(dest);
+  rv.muted = false; rv.volume = 1; ra.muted = false; ra.volume = 1;
+}
+async function loadFonts(){
+  try { await Promise.all([document.fonts.load(`700 40px "${$('#themeFont').value}"`), document.fonts.load(`40px "${$('#wbFont').value}"`), document.fonts.load(`700 40px "${$('#wbFont').value}"`)]); } catch {}
+}
+async function previewScene(c){
+  if (state.busy) return;
+  lock(true); state.abort = false;
+  try {
+    if (origMode()) getNarration(c); else { setStatus('Preparing voice…'); await ensureAudio(c); }
+    const [W, H] = $('#res').value.split('x').map(Number); stage.width = W; stage.height = H;
+    await loadFonts();
+    const ac = getCtx(); await ac.resume();
+    setupGains(ac.destination);
+    setStatus(`Previewing scene ${state.chunks.indexOf(c) + 1}. Nothing is being recorded.`);
+    await playScene(c, ac.destination);
+    setStatus(state.abort ? 'Preview stopped.' : 'Preview finished.');
+  } catch (e) { setStatus(e.message); }
+  finally { lock(false); }
+}
+$('#stopBtn').onclick = () => { state.abort = true; };
+
+async function record(list, label){
+  need(MIME, 'This browser cannot record video.');
+  for (let i = 0; i < list.length; i++) {
+    if (origMode()) { getNarration(list[i]); continue; }
+    setStatus(`${label}: preparing voice ${i+1} of ${list.length}…`); await ensureAudio(list[i]);
+  }
+  const [W, H] = $('#res').value.split('x').map(Number); stage.width = W; stage.height = H;
+  await loadFonts();
+  const ac = getCtx(); await ac.resume();
+  const dest = ac.createMediaStreamDestination();
+  setupGains(dest);
+  state.abort = false;
+
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  const stream = new MediaStream([...stage.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]);
+  const rec = new MediaRecorder(stream, { mimeType: MIME, videoBitsPerSecond: W >= 1920 ? 8e6 : 5e6, audioBitsPerSecond: 160000 });
+  const parts = []; rec.ondataavailable = e => e.data.size && parts.push(e.data);
+  const stopped = new Promise(r => rec.onstop = r);
+  $('#monitor').classList.add('live');
+  rec.start(1000);
+  try {
+    for (let i = 0; i < list.length; i++) {
+      setStatus(`${label}: recording scene ${state.chunks.indexOf(list[i]) + 1} (${i+1} of ${list.length})…`, i / list.length);
+      await playScene(list[i], dest);
+    }
+    if (state.abort) throw new Error('Stopped. Nothing was saved.');
+  } finally {
+    rec.stop(); await stopped;
+    stream.getTracks().forEach(t => t.stop());
+    $('#monitor').classList.remove('live');
+  }
+  return new Blob(parts, { type: MIME.split(';')[0] });
+}
+
+async function renderScenes(list, mode){
+  if (!list.length) return setStatus('Add some scenes first.');
+  lock(true);
+  try {
+    if (mode === 'all') {
+      const blob = await record(list, 'Full video');
+      addOutput(URL.createObjectURL(blob), `full-video.${EXT}`, blob.size);
+      setStatus('Full video ready. Download it below.', 1);
+    } else {
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i], n = String(state.chunks.indexOf(c) + 1).padStart(2, '0');
+        setChunkStatus(c, 'Recording…');
+        const blob = await record([c], `Scene ${+n}`);
+        if (c.outUrl) URL.revokeObjectURL(c.outUrl);
+        c.outUrl = URL.createObjectURL(blob); c.outName = `scene-${n}.${EXT}`;
+        setChunkStatus(c, `Rendered · ${(blob.size/1048576).toFixed(1)} MB`, 'good');
+        if (list.length > 1) addOutput(c.outUrl, c.outName, blob.size);
+      }
+      setStatus(list.length > 1 ? 'All scenes rendered. Download them below.' : 'Scene rendered.', 1);
+    }
+  } catch (e) { setStatus(e.message, 0); }
+  finally { lock(false); }
+}
+function addOutput(url, name, size){
+  const a = document.createElement('a'); a.href = url; a.download = name; a.textContent = `${name} (${(size/1048576).toFixed(1)} MB)`;
+  $('#outputs').appendChild(a);
+}
+$('#renderAll').onclick = () => renderScenes(state.chunks, 'all');
+$('#renderEach').onclick = () => renderScenes(state.chunks, 'each');
+
+function lock(on){
+  state.busy = on;
+  document.querySelectorAll('button').forEach(b => { if (!['seek','play'].includes(b.dataset.a) && b.id !== 'stopBtn') b.disabled = on; });
+}
+
+/* ---------- project save / open ---------- */
+$('#saveProj').onclick = () => {
+  const data = { version:1, theme:{ bg:$('#themeBg').value, text:$('#themeText').value, accent:$('#themeAccent').value, font:$('#themeFont').value },
+    audioStart: audioStart(), scenes: state.chunks.map(({ type, timed, start, end, title, points, text, board, words }) => ({ type, timed, start, end, title, points, text, board, words })) };
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }));
+  a.download = 'revoice-project.json'; a.click();
+};
+$('#loadProj').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (d.theme) { $('#themeBg').value = d.theme.bg; $('#themeText').value = d.theme.text; $('#themeAccent').value = d.theme.accent; $('#themeFont').value = d.theme.font; }
+    state.chunks = (d.scenes || []).map(s => ({ ...s, id: uid++ }));
+    if (d.audioStart != null) $('#audioStart').value = d.audioStart;
+    renderList(); idleStage(); setStatus(`Opened project with ${state.chunks.length} scenes. Load the matching video and audio files to render.`);
+  } catch { setStatus('That file is not a Revoice project.'); }
+  e.target.value = '';
+};
+
+idleStage();
+</script>
+</body>
+</html>

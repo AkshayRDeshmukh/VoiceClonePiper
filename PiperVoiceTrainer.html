@@ -1,0 +1,1089 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piper Voice Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF1EC;--panel:#FFFFFF;--ink:#1C2A28;--muted:#5C6C68;--line:#D3DAD5;
+  --amber:#C98708;--amber-soft:#F5E6C2;--pass:#2F7D55;--pass-soft:#DCEFE3;--flag:#B8472E;--flag-soft:#F6DDD5;
+  --radius:10px;--font:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Consolas,monospace;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#121817;--panel:#1A2221;--ink:#E3EAE6;--muted:#93A39E;--line:#2C3836;
+  --amber:#EBA93A;--amber-soft:#3A2F17;--pass:#5DBB8A;--pass-soft:#193328;--flag:#E07A5F;--flag-soft:#3A221B}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 var(--font)}
+header{display:flex;align-items:center;gap:24px;padding:12px 24px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5;flex-wrap:wrap;min-height:62px}
+.brand{font-weight:800;font-size:18px;letter-spacing:-.015em}
+.brand small{display:block;font-weight:500;font-size:12px;color:var(--muted);letter-spacing:0}
+.stats{display:flex;gap:22px;margin-left:auto;flex-wrap:wrap}
+.stat b{display:block;font-size:17px;line-height:1.2}.stat span{font-size:12px;color:var(--muted)}
+.shell{display:grid;grid-template-columns:236px 1fr}
+.rail{border-right:1px solid var(--line);padding:18px 12px;position:sticky;top:62px;align-self:start;height:calc(100vh - 62px);overflow:auto}
+.rail button{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:8px;color:var(--ink);font:inherit;font-weight:600;cursor:pointer;margin-bottom:2px}
+.rail button:hover{background:var(--paper)}
+.rail .n{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--muted)}
+.rail button.active{background:var(--amber-soft)}
+.rail button.active .n{border-color:var(--amber);background:var(--amber);color:#fff}
+.rail small{display:block;color:var(--muted);font-size:12px;font-weight:500}
+main{padding:28px 34px 90px;max-width:1120px;width:100%}
+section{display:none}section.active{display:block}
+h2{font-size:27px;margin:0 0 4px;letter-spacing:-.02em;font-weight:800}
+.lede{color:var(--muted);margin:0 0 22px;max-width:72ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px}
+.panel h3{margin:0 0 12px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:12px}
+label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:4px}
+label.check{display:flex;gap:8px;align-items:center;font-weight:500;color:var(--ink);margin:10px 0 0}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:8px 10px}
+textarea{font-family:var(--mono);font-size:13px;min-height:160px;resize:vertical}
+input[type=checkbox]{width:auto;accent-color:var(--amber)}
+input[type=range]{padding:0;accent-color:var(--amber);background:none;border:0}
+.val{font-family:var(--mono);font-size:12px;color:var(--ink);float:right}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-block;margin:0;font:inherit;font-size:14px;font-weight:700;border:1px solid var(--ink);background:var(--ink);color:var(--panel);padding:8px 16px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.ok{background:var(--pass);border-color:var(--pass);color:#fff}
+.btn.warn{background:var(--flag);border-color:var(--flag);color:#fff}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0;max-width:80ch}
+code{font-family:var(--mono);font-size:12.5px;background:var(--paper);padding:1px 5px;border-radius:4px}
+pre{font-family:var(--mono);font-size:12.5px;line-height:1.5;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;white-space:pre;margin:8px 0 0}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:20px;background:var(--paper);border:1px solid var(--line);margin:0 4px 4px 0}
+.tag.pass{background:var(--pass-soft);border-color:transparent;color:var(--pass)}
+.tag.flag{background:var(--flag-soft);border-color:transparent;color:var(--flag)}
+.tag.amber{background:var(--amber-soft);border-color:transparent}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:14px 0 6px}
+.bar i{display:block;height:100%;background:var(--amber);width:0;transition:width .2s}
+.log{font-family:var(--mono);font-size:12px;max-height:260px;overflow:auto;background:var(--paper);border-radius:8px;padding:10px;white-space:pre-wrap;min-height:60px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:700}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.review{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+.list{max-height:72vh;overflow:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.li{display:grid;grid-template-columns:10px 1fr;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13.5px}
+.li:hover{background:var(--paper)}.li.cur{background:var(--amber-soft)}
+.li small{display:block;color:var(--muted);font-size:11.5px}
+.dot{width:9px;height:9px;border-radius:50%;margin-top:7px;background:var(--line)}
+.dot.approved{background:var(--pass)}.dot.rejected{background:var(--flag)}.dot.flagged{background:var(--amber)}
+.wavewrap{position:relative;margin:14px 0 10px}
+canvas.wave{width:100%;height:160px;display:block;border-radius:8px;background:var(--paper)}
+.playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);left:0;display:none}
+.say{font-size:21px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin:4px 0 0}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}
+.metrics div{font-size:12px;color:var(--muted)}.metrics b{display:block;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+.kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;margin:0 2px}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.hist{display:flex;align-items:flex-end;gap:2px;height:110px;margin-top:10px;border-bottom:1px solid var(--line)}
+.hist i{flex:1;background:var(--amber);border-radius:2px 2px 0 0;min-height:1px}
+.hist i.out{background:var(--flag)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;z-index:20;font-weight:600;font-size:14px}
+#toast.show{opacity:1}
+@media (max-width:880px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static;height:auto;display:flex;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px}
+  .rail button{min-width:160px}
+  .review,.cols2{grid-template-columns:1fr}
+  main{padding:20px 16px 70px}
+  header{position:static}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Piper Voice Forge<small>ElevenLabs voice to Piper ONNX, one dataset at a time</small></div>
+  <div class="stats" id="stats"></div>
+</header>
+<div class="shell">
+<nav class="rail" id="rail"></nav>
+<main>
+
+<!-- 1 VOICE -->
+<section id="s1" class="active">
+  <h2>Voice source</h2>
+  <p class="lede">Connect ElevenLabs, choose the voice to capture, and freeze its settings. A training set needs the same voice, model, settings and seed for every clip — consistency beats expressiveness here.</p>
+  <div class="panel">
+    <h3>API key</h3>
+    <div class="row"><input type="password" data-s="apiKey" placeholder="Your ElevenLabs API key" autocomplete="off" style="flex:1;min-width:240px"><button class="btn" id="btnCheckKey">Check key</button></div>
+    <label class="check"><input type="checkbox" data-s="rememberKey"> Remember the key in this browser</label>
+    <p class="hint" id="acctInfo">The key is only sent to api.elevenlabs.io.</p>
+  </div>
+  <div class="panel">
+    <h3>Voice and model</h3>
+    <div class="grid">
+      <div><label>Voice</label><select id="voiceSel"><option value="">Load your voices first</option></select></div>
+      <div><label>Or paste a voice ID</label><input id="voiceManual" placeholder="Voice ID"></div>
+      <div><label>Model</label><select data-s="modelId" id="modelSel">
+        <option value="eleven_multilingual_v2">Eleven Multilingual v2</option>
+        <option value="eleven_v3">Eleven v3</option>
+        <option value="eleven_turbo_v2_5">Eleven Turbo v2.5</option>
+        <option value="eleven_flash_v2_5">Eleven Flash v2.5</option></select></div>
+      <div><label>Language code (optional)</label><input data-s="lang" placeholder="en, hi, mr, de…"></div>
+    </div>
+    <div class="row"><button class="btn ghost" id="btnLoadVoices">Load my voices and models</button><span class="hint" id="voiceInfo" style="margin:0"></span></div>
+    <p class="hint">Multilingual v2 is the safest choice for datasets: stable timbre and good seed reproducibility. v3 is more expressive but drifts more between clips.</p>
+  </div>
+  <div class="panel">
+    <h3>Frozen generation settings</h3>
+    <div class="grid">
+      <div><label>Stability <span class="val" data-out="stability"></span></label><input type="range" min="0" max="1" step="0.05" data-s="stability"></div>
+      <div><label>Similarity <span class="val" data-out="similarity"></span></label><input type="range" min="0" max="1" step="0.05" data-s="similarity"></div>
+      <div><label>Style exaggeration <span class="val" data-out="style"></span></label><input type="range" min="0" max="1" step="0.05" data-s="style"></div>
+      <div><label>Speed <span class="val" data-out="speed"></span></label><input type="range" min="0.7" max="1.2" step="0.01" data-s="speed"></div>
+    </div>
+    <div class="grid">
+      <div><label>Seed</label><input type="number" data-s="seed" min="0" max="4294967295"></div>
+      <div><label>Audio format</label><select data-s="fmt"><option value="pcm_22050">PCM 22,050 Hz (Piper medium/high)</option><option value="pcm_16000">PCM 16,000 Hz (Piper low)</option></select></div>
+      <div><label>ElevenLabs text normalization</label><select data-s="norm"><option value="auto">Auto</option><option value="on">On</option><option value="off">Off</option></select></div>
+    </div>
+    <label class="check"><input type="checkbox" data-s="speakerBoost"> Speaker boost</label>
+    <p class="hint">Good dataset defaults: stability 0.55–0.75, similarity 0.75–0.85, style 0, speed 1.0. Don't change these once generation starts, or the model learns two slightly different voices.</p>
+  </div>
+  <div class="panel">
+    <h3>Preview</h3>
+    <div class="row"><input id="previewText" value="The morning light crept slowly across the kitchen table, and for a moment, everything was quiet." style="flex:1;min-width:240px"><button class="btn" id="btnPreview">Generate preview</button></div>
+    <p class="hint" id="previewInfo"></p>
+  </div>
+  <p class="hint">Before building a dataset, confirm your ElevenLabs plan and terms allow using generated audio to train another model, and that you have rights to the voice.</p>
+</section>
+
+<!-- 2 CORPUS -->
+<section id="s2">
+  <h2>Text corpus</h2>
+  <p class="lede">Collect far more sentences than you need, clean them so the text matches exactly what will be spoken, then pick a balanced script that covers many words and sound patterns.</p>
+  <div class="panel">
+    <h3>Source text</h3>
+    <textarea id="corpusIn" placeholder="Paste text here: whole paragraphs from books or articles, or one sentence per line."></textarea>
+    <div class="row" style="margin-top:10px">
+      <input type="file" id="corpusFiles" accept=".txt,.md,.csv" multiple style="width:auto;flex:1;min-width:220px">
+      <button class="btn ghost" id="btnStarter">Insert starter sentences</button>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div><label>Minimum characters</label><input type="number" data-s="minChars" min="5"></div>
+      <div><label>Maximum characters</label><input type="number" data-s="maxChars" min="40"></div>
+    </div>
+    <label class="check"><input type="checkbox" data-s="expandNumbers"> Spell out numbers and common abbreviations (English)</label>
+    <label class="check"><input type="checkbox" data-s="skipCaps"> Drop sentences containing ALL-CAPS words (acronyms get read unpredictably)</label>
+    <div class="row" style="margin-top:14px"><button class="btn" id="btnClean">Clean and add to pool</button><button class="btn ghost" id="btnClearPool">Empty the pool</button></div>
+    <div id="cleanReport"></div>
+    <p class="hint">Good sources: public-domain books (Project Gutenberg, Wikisource), your own writing, and the kinds of phrases your app will actually speak. Aim for a pool 3–5 times the size you need.</p>
+  </div>
+  <div class="panel"><h3>Candidate pool</h3><div id="poolStats"></div></div>
+  <div class="panel">
+    <h3>Pick a balanced script</h3>
+    <div class="grid"><div><label>Target audio, minutes</label><input type="number" data-s="targetMin" min="5" step="5"></div></div>
+    <p class="hint" style="margin-top:0">Sentences that add new words and letter patterns are picked first, with extra weight for questions and exclamations. 60–120 minutes is a strong fine-tuning set; 30 minutes is a workable minimum.</p>
+    <div class="row" style="margin-top:12px"><button class="btn" id="btnPick">Pick sentences</button><button class="btn ghost" id="btnAddPicked" disabled>Add picked to project</button><button class="btn ghost" id="btnAddAll">Add whole pool</button></div>
+    <div id="pickReport"></div>
+  </div>
+  <div class="panel">
+    <h3>Project script</h3><div id="projStats"></div>
+    <div class="row" style="margin-top:12px"><button class="btn ghost" id="btnDownloadScript">Download script</button><button class="btn ghost" id="btnDropPending">Remove sentences not yet generated</button></div>
+  </div>
+</section>
+
+<!-- 3 GENERATE -->
+<section id="s3">
+  <h2>Generate speech</h2>
+  <p class="lede">Each sentence is sent to ElevenLabs with the frozen settings and saved in this browser as raw 16-bit PCM. Checks run on every clip as it arrives. You can stop and resume at any time.</p>
+  <div class="panel">
+    <div class="grid">
+      <div><label>What to generate</label><select id="genScope">
+        <option value="pending">Sentences not yet generated</option>
+        <option value="failed">Failed requests</option>
+        <option value="flagged">Flagged by checks (new seed)</option>
+        <option value="rejected">Rejected in review (new seed)</option></select></div>
+      <div><label>Parallel requests</label><input type="number" data-s="concurrency" min="1" max="10"></div>
+    </div>
+    <p class="hint" id="genEstimate" style="margin-top:0"></p>
+    <div class="row" style="margin-top:12px"><button class="btn" id="btnGen">Start generating</button><button class="btn ghost" id="btnStop" disabled>Stop</button><button class="btn ghost" id="btnCredits">Refresh credits</button></div>
+    <div class="bar"><i id="genBar"></i></div><div class="hint" id="genStatus"></div>
+  </div>
+  <div class="panel"><h3>Log</h3><div class="log" id="genLog"></div></div>
+</section>
+
+<!-- 4 QC -->
+<section id="s4">
+  <h2>Automatic checks</h2>
+  <p class="lede">Every clip is measured for silence, clipping, loudness and pauses, then trimmed and normalized on export. Speaking rate is compared against the whole set: a clip that is much faster or slower than its text implies usually has skipped, repeated or invented words.</p>
+  <div class="panel">
+    <h3>Thresholds</h3>
+    <div class="grid">
+      <div><label>Silence threshold, dBFS</label><input type="number" data-s="qcSilDb" step="1"></div>
+      <div><label>Padding before speech, s</label><input type="number" data-s="qcPadLead" step="0.01"></div>
+      <div><label>Padding after speech, s</label><input type="number" data-s="qcPadTrail" step="0.01"></div>
+      <div><label>Longest allowed pause, s</label><input type="number" data-s="qcMaxPause" step="0.05"></div>
+      <div><label>Rate outlier limit, z-score</label><input type="number" data-s="qcZ" step="0.1"></div>
+      <div><label>Target loudness, dBFS RMS</label><input type="number" data-s="qcTargetRms" step="0.5"></div>
+      <div><label>Peak ceiling, dBFS</label><input type="number" data-s="qcPeak" step="0.1"></div>
+      <div><label>Too quiet below, dBFS</label><input type="number" data-s="qcMinRms" step="1"></div>
+    </div>
+    <div class="row"><button class="btn" id="btnReanalyze">Re-run checks on all clips</button><span class="hint" id="reStatus" style="margin:0"></span></div>
+  </div>
+  <div class="panel">
+    <h3>Transcript check</h3>
+    <p class="hint" style="margin-top:0">Sends clips to ElevenLabs speech-to-text and compares the transcript with the script. This catches mispronunciations and hallucinated words the rate check misses. It uses speech-to-text credits.</p>
+    <div class="grid" style="margin-top:12px">
+      <div><label>Speech-to-text model</label><input data-s="sttModel"></div>
+      <div><label>Flag above word error, %</label><input type="number" data-s="qcWerPct" min="0" max="100"></div>
+      <div><label>Which clips</label><select id="sttScope"><option value="unchecked">Not yet checked</option><option value="flagged">Flagged only</option><option value="all">All clips</option></select></div>
+    </div>
+    <div class="row"><button class="btn" id="btnStt">Run transcript check</button><button class="btn ghost" id="btnSttStop" disabled>Stop</button></div>
+    <div class="bar"><i id="sttBar"></i></div><div class="hint" id="sttStatus"></div>
+  </div>
+  <div class="panel">
+    <h3>Results</h3>
+    <div id="qcSummary"></div>
+    <div class="row" style="margin-top:14px"><button class="btn" data-go="5">Review flagged clips</button><button class="btn ghost" id="btnRegenFlagged">Regenerate all flagged</button></div>
+  </div>
+</section>
+
+<!-- 5 REVIEW -->
+<section id="s5">
+  <h2>Listen and decide</h2>
+  <p class="lede">Hear every flagged clip, and spot-check the rest. Reject anything with a wrong word, odd emphasis, breath noise or a change in voice character. When the audio says something slightly different from the script, fix the text instead.</p>
+  <div class="row" style="margin-bottom:12px">
+    <select id="revFilter" style="width:auto"><option value="flagged">Flagged, not reviewed</option><option value="unreviewed">All not reviewed</option><option value="all">All clips</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+    <select id="revSort" style="width:auto"><option value="id">Script order</option><option value="sev">Most suspicious first</option></select>
+    <button class="btn ghost sm" id="btnApproveClean">Approve all unflagged</button>
+    <span class="hint" id="revCount" style="margin:0"></span>
+  </div>
+  <div class="review"><div class="list" id="revList"></div><div id="revDetail"></div></div>
+  <p class="hint">Keys: <span class="kbd">Space</span> play <span class="kbd">A</span> approve <span class="kbd">R</span> reject <span class="kbd">G</span> regenerate <span class="kbd">←</span><span class="kbd">→</span> move <span class="kbd">U</span> clear decision</p>
+</section>
+
+<!-- 6 EXPORT -->
+<section id="s6">
+  <h2>Export dataset</h2>
+  <p class="lede">Builds a ZIP with trimmed, loudness-matched 16-bit mono WAVs, metadata for both Piper versions, a QC report, test sentences and ready-to-run training scripts.</p>
+  <div class="panel">
+    <div class="grid">
+      <div><label>Include</label><select id="expScope"><option value="approved">Approved clips only</option><option value="approved+pass">Approved, plus unreviewed clips that passed all checks</option></select></div>
+    </div>
+    <div id="expSummary"></div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="btnExport">Download dataset ZIP</button></div>
+    <div class="bar"><i id="expBar"></i></div><div class="hint" id="expStatus"></div>
+  </div>
+  <div class="panel">
+    <h3>ZIP layout</h3>
+<pre>dataset/
+  wav/utt_00001.wav …          22,050 Hz, mono, 16-bit, trimmed + normalized
+  metadata.csv                 utt_00001|text          (legacy piper_train / LJSpeech)
+  metadata_piper1.csv          utt_00001.wav|text      (piper1-gpl)
+  qc_report.csv                duration, rate, transcript error, decisions
+  test_sentences.txt           held-out lines for step 8
+  scripts/1_setup.sh  2_train.sh  3_export_and_test.sh  high_quality_legacy.sh
+  dataset_info.json            voice, model, seed and settings used</pre>
+  </div>
+  <div class="panel">
+    <h3>Start over</h3>
+    <p class="hint" style="margin-top:0">Deletes all sentences, audio and review decisions stored in this browser. Settings and the API key stay.</p>
+    <div class="row" style="margin-top:10px"><button class="btn warn" id="btnReset">Delete project data</button></div>
+  </div>
+</section>
+
+<!-- 7 TRAIN -->
+<section id="s7">
+  <h2>Fine-tune and export ONNX</h2>
+  <p class="lede">Training runs on a Linux machine with an NVIDIA GPU (8 GB VRAM minimum, 24 GB comfortable). These scripts are also inside the ZIP. They fine-tune from the Lessac medium checkpoint using the maintained <code>piper1-gpl</code> repository, since the original <code>rhasspy/piper</code> repo is archived.</p>
+  <div class="panel">
+    <h3>Training settings</h3>
+    <div class="grid">
+      <div><label>Voice file name</label><input data-s="trVoice"></div>
+      <div><label>eSpeak voice</label><input data-s="trEspeak" placeholder="en-us, en-gb, hi, mr"></div>
+      <div><label>Working folder on the GPU machine</label><input data-s="trBase"></div>
+      <div><label>GPU memory</label><select data-s="trVram"><option value="8">8 GB</option><option value="12">12 GB</option><option value="16">16 GB</option><option value="24">24 GB</option><option value="48">48 GB</option></select></div>
+      <div><label>Checkpoint's current epoch</label><input type="number" data-s="trBaseEpoch"></div>
+      <div><label>Extra epochs to train</label><input type="number" data-s="trExtra" step="100"></div>
+    </div>
+    <div><label>Base checkpoint URL (medium, 22,050 Hz)</label><input data-s="trCkpt"></div>
+    <p class="hint">Fine-tuning resumes the checkpoint's epoch counter, so the training limit is its epoch plus your extra epochs. About 1,000 extra epochs is typical; stop earlier once <code>loss_disc_all</code> in TensorBoard levels off and test clips stop improving. The checkpoint can be from another language — that's normal for Hindi, Marathi and others.</p>
+  </div>
+  <div class="panel"><h3>1. Set up once</h3><div class="row"><button class="btn ghost sm" data-copy="cmdSetup">Copy</button></div><pre id="cmdSetup"></pre></div>
+  <div class="panel"><h3>2. Train</h3><div class="row"><button class="btn ghost sm" data-copy="cmdTrain">Copy</button></div><pre id="cmdTrain"></pre>
+    <p class="hint">Watch progress with <code>tensorboard --logdir</code> on the runs folder. If a checkpoint fails to load because of old hyperparameters, see the piper1-gpl discussions — older checkpoints sometimes need a compatible one.</p></div>
+  <div class="panel"><h3>3. Export ONNX and render test clips</h3><div class="row"><button class="btn ghost sm" data-copy="cmdExport">Copy</button></div><pre id="cmdExport"></pre>
+    <p class="hint">You get <code>voice.onnx</code> plus <code>voice.onnx.json</code>. Keep them together; Piper loads the config by that name.</p></div>
+  <div class="panel"><h3>Optional: high-quality model (legacy trainer)</h3>
+    <p class="hint" style="margin-top:0">piper1-gpl supports medium checkpoints out of the box. For the larger <code>high</code> model, the archived trainer still works best inside its recommended Docker image (<code>nvcr.io/nvidia/pytorch:22.03-py3</code>). It's slower and needs more VRAM, and the gain is modest compared with a cleaner dataset.</p>
+    <div style="margin-top:10px"><label>High-quality base checkpoint URL</label><input data-s="trCkptHigh" placeholder="Paste a .ckpt URL from piper-checkpoints (e.g. en/en_US/lessac/high)"></div>
+    <div class="row" style="margin-top:10px"><button class="btn ghost sm" data-copy="cmdLegacy">Copy</button></div><pre id="cmdLegacy"></pre></div>
+</section>
+
+<!-- 8 TEST -->
+<section id="s8">
+  <h2>Test and improve</h2>
+  <p class="lede">Compare your trained voice against the ElevenLabs original on sentences it never saw. Note the words it gets wrong, pull targeted sentences for them from the pool, and run another round.</p>
+  <div class="panel">
+    <h3>Held-out test sentences</h3>
+    <textarea data-s="testSentences" style="min-height:150px"></textarea>
+    <p class="hint">One per line. Keep these out of the training script — they're exported as test_sentences.txt and rendered by the export script.</p>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" id="btnRefs">Generate ElevenLabs references</button>
+      <label class="btn ghost">Load Piper test clips<input type="file" id="piperFiles" accept=".wav,audio/wav" multiple hidden></label>
+      <span class="hint" id="refInfo" style="margin:0"></span></div>
+  </div>
+  <div class="panel"><h3>Compare</h3><div id="testTable"></div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="btnSaveRound">Save this round</button></div><div id="rounds"></div></div>
+  <div class="panel">
+    <h3>Build the next dataset round</h3>
+    <div class="grid">
+      <div><label>Sentences per problem word</label><input type="number" id="impPer" value="6" min="1" max="40"></div>
+      <div><label>Extra questions</label><input type="number" id="impQ" value="0" min="0"></div>
+      <div><label>Extra exclamations</label><input type="number" id="impE" value="0" min="0"></div>
+      <div><label>Extra long sentences (140+ chars)</label><input type="number" id="impL" value="0" min="0"></div>
+    </div>
+    <div class="row"><button class="btn" id="btnBuildImp">Find sentences in pool</button><button class="btn ghost" id="btnAddImp" disabled>Add to project</button></div>
+    <div id="impReport"></div>
+    <div style="margin-top:16px"><label>Write your own sentences for words the pool lacks</label><textarea id="customIn" style="min-height:90px" placeholder="One sentence per line"></textarea></div>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" id="btnAddCustom">Clean and add to project</button></div>
+    <p class="hint">Then go back to Generate, check and review the new clips, export again, and continue training from your latest checkpoint for a few hundred epochs.</p>
+  </div>
+</section>
+
+</main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ================= helpers ================= */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const fmtDur=s=>s<60?`${s.toFixed(0)} s`:s<3600?`${(s/60).toFixed(1)} min`:`${Math.floor(s/3600)} h ${Math.round((s%3600)/60)} min`;
+const fmtN=n=>Number(n).toLocaleString('en-US');
+const median=a=>{if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2};
+const normKey=s=>s.toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu,' ').trim();
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3400)}
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+const CHARS_PER_SEC=14;
+const estSec=t=>t.length/CHARS_PER_SEC+0.4;
+
+/* ================= content ================= */
+const STARTER=`The morning train was late again, so we walked the last two miles.
+Could you tell me where the nearest pharmacy is?
+I can't believe you finished the whole puzzle in one afternoon!
+She folded the letter carefully and slipped it inside a blue envelope.
+Before you leave, please switch off the lights in the kitchen.
+Why would anyone paint a fence purple?
+The river rose quickly after three days of heavy rain.
+Honestly, I think the second option is a little safer.
+We need flour, eggs, butter, and a pinch of salt.
+What a wonderful surprise to see you here!
+The old clock in the hallway chimed exactly at noon.
+If the weather stays clear, we'll climb the ridge tomorrow.
+He whispered the answer, hoping nobody else would hear.
+Is this the right way to the museum, or should we turn back?
+Thousands of tiny lights shimmered across the quiet harbor.
+Please remember to bring your ticket and your passport.
+The recipe looked simple, but the sauce kept curdling.
+Wait, did you hear that strange noise upstairs?
+Our neighbor grows enormous pumpkins every autumn.
+After a long pause, the judge finally announced her decision.
+You're absolutely right, and I should have listened sooner.
+The engine coughed twice, sputtered, and then went silent.
+How many languages does your grandmother speak?
+A gentle breeze carried the smell of jasmine through the window.
+Don't touch that switch; it controls the main power supply.
+The children laughed as the puppy chased its own tail.
+Would you rather travel by boat or by plane?
+Each chapter ends with a question that pulls you into the next one.
+The market was crowded, noisy, and full of bright colors.
+I'm sorry, but the store closes in five minutes.
+That was the loudest thunderstorm I've ever heard!
+Scientists measured the glacier's movement over several decades.
+When the phone rang, everyone froze and stared at it.
+Take the second left, then continue straight past the bakery.
+Nobody expected the quiet student to win the debate.
+Are you sure you locked the front door?
+The violinist tuned her strings while the audience settled in.
+Fresh bread, warm soup, and good company make a perfect evening.
+Unfortunately, the flight has been delayed until further notice.
+Look at the size of that wave!`;
+const DEFAULT_TESTS=`Welcome home. The living room lights are now on.
+It's twenty-three degrees outside, with a light breeze from the west.
+Did you remember to water the plants before leaving?
+Wow, that's the best news I've heard all week!
+According to the report, sales rose by nearly fifteen percent last quarter.
+The quick brown fox jumps over the lazy dog.
+Please hold on while I connect you to the next available representative.
+Although the path was steep and muddy, the view from the summit made every step worth it.
+Hmm, I'm not entirely sure, but let's find out together.
+Your meeting with Priya starts in ten minutes, in the small conference room.`;
+
+/* ================= settings ================= */
+const DEFAULTS={apiKey:'',rememberKey:false,voiceId:'',voiceName:'',modelId:'eleven_multilingual_v2',lang:'',
+  stability:0.6,similarity:0.8,style:0,speed:1,speakerBoost:true,seed:424242,fmt:'pcm_22050',norm:'auto',concurrency:2,
+  minChars:20,maxChars:180,expandNumbers:true,skipCaps:true,targetMin:90,
+  qcSilDb:-45,qcPadLead:0.15,qcPadTrail:0.25,qcMaxPause:0.9,qcZ:3,qcTargetRms:-21,qcPeak:-1,qcMinRms:-38,sttModel:'scribe_v1',qcWerPct:12,
+  trVoice:'en_US-myvoice-medium',trEspeak:'en-us',trBase:'$HOME/piper-voice',trVram:'24',trBaseEpoch:2164,trExtra:1000,
+  trCkpt:'https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/main/en/en_US/lessac/medium/epoch%3D2164-step%3D1355540.ckpt',
+  trCkptHigh:'',testSentences:DEFAULT_TESTS,charsUsed:0};
+const ls={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}},del(k){try{localStorage.removeItem(k)}catch{}}};
+let S=Object.assign({},DEFAULTS,(()=>{try{return JSON.parse(ls.get('pvf.settings')||'{}')}catch{return{}}})());
+S.apiKey=ls.get('pvf.key')||'';
+function saveSettings(){const c={...S};delete c.apiKey;ls.set('pvf.settings',JSON.stringify(c));if(S.rememberKey&&S.apiKey)ls.set('pvf.key',S.apiKey);else ls.del('pvf.key')}
+const SR=()=>S.fmt==='pcm_16000'?16000:22050;
+const creditFactor=()=>/flash|turbo/.test(S.modelId)?0.5:1;
+const isEnglish=()=>!S.lang||/^en/i.test(S.lang);
+
+/* ================= IndexedDB ================= */
+const DB={db:null,
+  open(){return new Promise((res,rej)=>{const r=indexedDB.open('piper-voice-forge',1);
+    r.onupgradeneeded=()=>{const d=r.result;['audio','meta'].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)});if(!d.objectStoreNames.contains('items'))d.createObjectStore('items',{keyPath:'id'})};
+    r.onsuccess=()=>{DB.db=r.result;res()};r.onerror=()=>rej(r.error)})},
+  p(r){return new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})},
+  os(s,m){return DB.db.transaction(s,m||'readonly').objectStore(s)},
+  get(s,k){return DB.p(DB.os(s).get(k))},
+  put(s,v,k){const o=DB.os(s,'readwrite');return DB.p(k===undefined?o.put(v):o.put(v,k))},
+  del(s,k){return DB.p(DB.os(s,'readwrite').delete(k))},
+  all(s){return DB.p(DB.os(s).getAll())},
+  clear(s){return DB.p(DB.os(s,'readwrite').clear())},
+  putMany(s,arr){return new Promise((res,rej)=>{const tx=DB.db.transaction(s,'readwrite'),o=tx.objectStore(s);arr.forEach(v=>o.put(v));tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})},
+  delMany(s,keys){return new Promise((res,rej)=>{const tx=DB.db.transaction(s,'readwrite'),o=tx.objectStore(s);keys.forEach(k=>o.delete(k));tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+};
+const state={items:[],byId:new Map(),pool:[],nextId:1,picked:[],running:false,stop:false,sttRunning:false,sttStop:false,
+  revList:[],revIdx:0,refs:{},rounds:[],piperTests:[],testDraft:[],impPicked:[]};
+const saveItem=it=>DB.put('items',it);
+
+/* ================= audio utils ================= */
+function i16toF32(i16){const f=new Float32Array(i16.length);for(let i=0;i<i16.length;i++)f[i]=i16[i]/32768;return f}
+function wavBytes(f32,sr){const n=f32.length,buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+  for(let i=0,o=44;i<n;i++,o+=2){const s=Math.max(-1,Math.min(1,f32[i]));v.setInt16(o,Math.round(s<0?s*32768:s*32767),true)}
+  return new Uint8Array(buf)}
+const pcmCache=new Map();
+async function getPCM(id,useCache=true){
+  if(useCache&&pcmCache.has(id)){const v=pcmCache.get(id);pcmCache.delete(id);pcmCache.set(id,v);return v}
+  const rec=await DB.get('audio',id);if(!rec)return null;
+  const v={f32:i16toF32(new Int16Array(rec.buf)),sr:rec.sr};
+  if(useCache){pcmCache.set(id,v);if(pcmCache.size>40)pcmCache.delete(pcmCache.keys().next().value)}
+  return v}
+let AC=null,curSrc=null,playInfo=null;
+const ac=()=>AC||(AC=new (window.AudioContext||window.webkitAudioContext)());
+function stopAudio(){if(curSrc){try{curSrc.stop()}catch{}curSrc=null}playInfo=null;const ph=$('#playhead');if(ph)ph.style.display='none'}
+function toBuffer(f32,sr){const b=ac().createBuffer(1,f32.length||1,sr);b.copyToChannel(f32,0);return b}
+function playBuffer(buf,onTick){stopAudio();const a=ac();if(a.state==='suspended')a.resume();
+  const s=a.createBufferSource();s.buffer=buf;s.connect(a.destination);s.onended=()=>{if(curSrc===s){curSrc=null;playInfo=null;const ph=$('#playhead');if(ph)ph.style.display='none'}};
+  s.start();curSrc=s;playInfo={t0:a.currentTime,dur:buf.duration,onTick};if(onTick)requestAnimationFrame(tick)}
+function tick(){if(!playInfo)return;const p=(ac().currentTime-playInfo.t0)/playInfo.dur;playInfo.onTick(Math.min(1,p));if(p<1)requestAnimationFrame(tick)}
+
+/* ---- analysis: silence, trim, loudness, pauses, rate ---- */
+const FLAG={silent:'No speech found',short:'Very short',long:'Over 15 s',cutoff:'Ends abruptly',lead:'Long silence before speech',
+  pause:'Long pause mid-sentence',clip:'Clipping',quiet:'Very quiet',fast:'Too fast for its text',slow:'Too slow for its text',asr:'Transcript mismatch'};
+function analyze(f32,sr,text){
+  const hop=Math.round(sr*0.01),nF=Math.max(1,Math.floor(f32.length/hop)),db=new Float32Array(nF);
+  let peak=0,clip=0,maxDb=-120;
+  for(let i=0;i<f32.length;i++){const a=Math.abs(f32[i]);if(a>peak)peak=a;if(a>=0.999)clip++}
+  for(let f=0;f<nF;f++){let e=0;for(let i=f*hop;i<(f+1)*hop&&i<f32.length;i++)e+=f32[i]*f32[i];const d=10*Math.log10(e/hop+1e-12);db[f]=d;if(d>maxDb)maxDb=d}
+  const thr=Math.max(S.qcSilDb,maxDb-40),v=Array.from(db,d=>d>thr);
+  const on=(a,b)=>{let c=0;for(let k=Math.max(0,a);k<=Math.min(nF-1,b);k++)if(v[k])c++;return c>=3};
+  let first=-1,last=-1;
+  for(let f=0;f<nF;f++)if(v[f]&&on(f,f+4)){first=f;break}
+  for(let f=nF-1;f>=0;f--)if(v[f]&&on(f-4,f)){last=f;break}
+  const dur=f32.length/sr;
+  if(first<0||last<first)return{dur,speech:0,lead:dur,trail:0,maxPause:0,peak,clip,rmsDb:-120,rate:0,trimStart:0,trimEnd:f32.length,gain:1,outDur:dur,flags:['silent']};
+  let e=0,cnt=0,run=0,maxRun=0;
+  for(let f=first;f<=last;f++){if(v[f]){e+=Math.pow(10,db[f]/10);cnt++;run=0}else{run++;if(run>maxRun)maxRun=run}}
+  const rmsDb=10*Math.log10(e/Math.max(1,cnt)+1e-12);
+  const speech=(last-first+1)*hop/sr,lead=first*hop/sr,trail=Math.max(0,f32.length-(last+1)*hop)/sr,maxPause=maxRun*hop/sr;
+  const letters=(text.match(/[\p{L}\p{M}]/gu)||[]).length,rate=letters/Math.max(speech,0.1);
+  const trimStart=Math.round(first*hop-S.qcPadLead*sr),trimEnd=Math.round((last+1)*hop+S.qcPadTrail*sr);
+  const gain=Math.min(Math.pow(10,(S.qcTargetRms-rmsDb)/20),Math.pow(10,S.qcPeak/20)/Math.max(peak,1e-6));
+  const outDur=(trimEnd-trimStart)/sr,flags=[];
+  if(speech<0.5)flags.push('short');if(outDur>15)flags.push('long');if(trail<0.04)flags.push('cutoff');if(lead>1.2)flags.push('lead');
+  if(maxPause>S.qcMaxPause)flags.push('pause');if(clip>8)flags.push('clip');if(rmsDb<S.qcMinRms)flags.push('quiet');
+  return{dur,speech,lead,trail,maxPause,peak,clip,rmsDb,rate,trimStart,trimEnd,gain,outDur,flags}}
+function cleanClip(f32,q,sr){
+  const n=Math.max(0,q.trimEnd-q.trimStart),out=new Float32Array(n),a=Math.max(0,q.trimStart),b=Math.min(f32.length,q.trimEnd);
+  let mean=0;for(let i=a;i<b;i++)mean+=f32[i];mean/=Math.max(1,b-a);
+  for(let i=a;i<b;i++)out[i-q.trimStart]=(f32[i]-mean)*q.gain;
+  const fl=Math.min(n>>1,Math.round(0.005*sr));for(let i=0;i<fl;i++){const g=i/fl;out[i]*=g;out[n-1-i]*=g}
+  return out}
+function flagsOf(it){const q=it.qc;if(!q)return[];const f=[...q.flags];
+  if(q.z!=null&&Math.abs(q.z)>S.qcZ)f.push(q.z>0?'fast':'slow');
+  if(q.wer!=null&&q.wer*100>S.qcWerPct)f.push('asr');return f}
+const sevOf=it=>flagsOf(it).length*2+Math.abs(it.qc?.z||0)/2+(it.qc?.wer||0)*10;
+function recomputeRates(){
+  const done=state.items.filter(i=>i.qc&&i.qc.rate>0);
+  if(done.length<8){done.forEach(i=>i.qc.z=null);return}
+  const r=done.map(i=>i.qc.rate),med=median(r),mad=median(r.map(x=>Math.abs(x-med)))||0.01;
+  state.rateMed=med;done.forEach(i=>i.qc.z=(i.qc.rate-med)/(1.4826*mad))}
+
+/* ================= text cleaning ================= */
+const ONES=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+function n2w(n){if(n<20)return ONES[n];if(n<100)return TENS[Math.floor(n/10)]+(n%10?'-'+ONES[n%10]:'');
+  if(n<1000)return ONES[Math.floor(n/100)]+' hundred'+(n%100?' '+n2w(n%100):'');
+  for(const[v,w]of[[1e9,'billion'],[1e6,'million'],[1e3,'thousand']])if(n>=v)return n2w(Math.floor(n/v))+' '+w+(n%v?' '+n2w(n%v):'');return String(n)}
+function yearW(n){if(n>=2000&&n<2010)return n2w(n);if(n%100===0)return n2w(n/100)+' hundred';return n2w(Math.floor(n/100))+' '+(n%100<10?'oh '+ONES[n%100]:n2w(n%100))}
+const ORD={one:'first',two:'second',three:'third',five:'fifth',eight:'eighth',nine:'ninth',twelve:'twelfth'};
+function ordinal(n){const w=n2w(n),m=w.match(/([a-z]+)$/),last=m[1],head=w.slice(0,-last.length);
+  return head+(ORD[last]||(last.endsWith('y')?last.slice(0,-1)+'ieth':last+'th'))}
+const decW=s=>{const[a,b]=s.split('.');return n2w(+a)+(b?' point '+[...b].map(d=>ONES[+d]).join(' '):'')};
+function expandNums(s){
+  s=s.replace(/(\d),(?=\d{3}\b)/g,'$1');
+  s=s.replace(/\$(\d+)(?:\.(\d{2}))?\b/g,(m,a,b)=>n2w(+a)+(+a===1?' dollar':' dollars')+(b&&+b?' and '+n2w(+b)+(+b===1?' cent':' cents'):''));
+  s=s.replace(/(\d+(?:\.\d+)?)\s?%/g,(m,a)=>decW(a)+' percent');
+  s=s.replace(/\b(\d+)(st|nd|rd|th)\b/gi,(m,a)=>ordinal(+a));
+  s=s.replace(/\b(\d{4})s\b/g,(m,a)=>{const w=yearW(+a);return w.endsWith('y')?w.slice(0,-1)+'ies':w+'s'});
+  s=s.replace(/\b\d+\.\d+\b/g,m=>decW(m));
+  s=s.replace(/\b\d+\b/g,m=>{if(m.length>9)return m;const n=+m;if(m.length===4&&n>=1100&&n<2100)return yearW(n);if(m.length>1&&m[0]==='0')return[...m].map(d=>ONES[+d]).join(' ');return n2w(n)});
+  return s}
+const ABBR=[[/\bMr\./g,'Mister'],[/\bMrs\./g,'Missus'],[/\bDr\./g,'Doctor'],[/\bvs\./gi,'versus'],[/\betc\./gi,'et cetera'],[/\be\.g\./gi,'for example'],[/\bi\.e\./gi,'that is'],[/\bSt\. (?=[A-Z])/g,'Saint '],[/\s&\s/g,' and ']];
+function tidy(s){return s.normalize('NFC').replace(/[\u201C\u201D\u201E\u00AB\u00BB"]/g,'').replace(/[\u2018\u2019\u02BC\u0060\u00B4]/g,"'")
+  .replace(/\s*[\u2014\u2013]\s*|\s+-\s+|--+/g,', ').replace(/\u2026/g,'...').replace(/\s+/g,' ').replace(/\s+([,.;:!?।])/g,'$1')
+  .replace(/,\s*,/g,',').replace(/^[\s,;:'.-]+/,'').replace(/[,;:]\s*$/,'.').trim()}
+function splitSentences(text){
+  const raw=text.replace(/\r/g,'');const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const endP=lines.filter(l=>/[.!?।]["')\]]*$/.test(l)).length;
+  const units=lines.length&&endP/lines.length>0.6?lines:raw.split(/\n\s*\n/).map(p=>p.replace(/\n/g,' ').trim()).filter(Boolean);
+  const seg=window.Intl&&Intl.Segmenter?new Intl.Segmenter(S.lang||'en',{granularity:'sentence'}):null;
+  const out=[];
+  for(const u of units){const parts=seg?[...seg.segment(u)].map(x=>x.segment):(u.match(/[^.!?।]+[.!?।]+["')\]]*|\S[^.!?।]*$/g)||[u]);
+    for(const p of parts)for(const q of p.split(/(?<=[।॥])\s*/))if(q.trim())out.push(q.trim())}
+  return out}
+function sentenceType(s){const c=s.slice(-1);return c==='?'?'question':c==='!'?'exclaim':'statement'}
+function cleanOne(s){
+  if(S.expandNumbers&&isEnglish())for(const[re,w]of ABBR)s=s.replace(re,w);
+  s=tidy(s);if(S.expandNumbers&&isEnglish())s=tidy(expandNums(s));
+  if(/[\p{L}\p{M}]$/u.test(s))s+='.';
+  let why=null;
+  if(/https?:|www\.|\S@\S/.test(s))why='link or email';
+  else if(/[|#*_=<>{}\[\]\\/~^()$%+]/.test(s))why='symbols';
+  else if(/\d/.test(s))why='digits';
+  else if((s.match(/[\p{L}\p{M}]/gu)||[]).length<s.replace(/\s/g,'').length*0.7)why='too few letters';
+  else if(s.length<S.minChars)why='too short';
+  else if(s.length>S.maxChars)why='too long';
+  else if(S.skipCaps&&/(^|[^\p{L}])\p{Lu}{2,}(?![\p{L}])/u.test(s))why='ALL-CAPS word';
+  else if(/(.)\1{3,}/.test(s))why='repeated characters';
+  return{text:s,why}}
+
+/* ================= ElevenLabs API ================= */
+async function el(path,opts={}){
+  if(!S.apiKey)throw Object.assign(new Error('Add your ElevenLabs API key in step 1.'),{status:401});
+  let res;
+  try{res=await fetch('https://api.elevenlabs.io'+path,{...opts,headers:{'xi-api-key':S.apiKey,...(opts.headers||{})}})}
+  catch(e){throw new Error('Could not reach ElevenLabs (offline, blocked, or a browser security restriction). If you opened this file directly, try serving it: python3 -m http.server, then open http://localhost:8000')}
+  if(!res.ok){let msg=res.statusText;try{const j=await res.json();const d=j.detail||j;msg=d.message||d.status||(typeof d==='string'?d:JSON.stringify(d))}catch{}
+    throw Object.assign(new Error(`${res.status} ${msg}`),{status:res.status,body:msg})}
+  return res}
+async function tts(text,seed){
+  const body={text,model_id:S.modelId,seed:seed>>>0,voice_settings:{stability:+S.stability,similarity_boost:+S.similarity,style:+S.style,use_speaker_boost:!!S.speakerBoost,speed:+S.speed}};
+  if(S.norm!=='auto')body.apply_text_normalization=S.norm;
+  if(S.lang)body.language_code=S.lang;
+  if(!S.voiceId)throw Object.assign(new Error('Choose a voice in step 1.'),{status:400});
+  const r=await el(`/v1/text-to-speech/${encodeURIComponent(S.voiceId)}?output_format=${S.fmt}`,{method:'POST',headers:{'Content-Type':'application/json',Accept:'audio/*'},body:JSON.stringify(body)});
+  const buf=await r.arrayBuffer();return new Int16Array(buf.slice(0,buf.byteLength-buf.byteLength%2))}
+async function stt(f32,sr){
+  const fd=new FormData();fd.append('model_id',S.sttModel);fd.append('tag_audio_events','false');
+  if(S.lang)fd.append('language_code',S.lang);
+  fd.append('file',new Blob([wavBytes(f32,sr)],{type:'audio/wav'}),'clip.wav');
+  const j=await (await el('/v1/speech-to-text',{method:'POST',body:fd})).json();return j.text||''}
+function wordsOf(s){if(isEnglish())s=expandNums(s);return s.toLowerCase().normalize('NFKC').replace(/[’`]/g,"'").replace(/[^\p{L}\p{M}\p{N}' ]+/gu,' ').split(/\s+/).map(w=>w.replace(/^'+|'+$/g,'')).filter(Boolean)}
+function wer(ref,hyp){const r=wordsOf(ref),h=wordsOf(hyp);if(!r.length)return h.length?1:0;let prev=Array.from({length:h.length+1},(_,j)=>j);
+  for(let i=1;i<=r.length;i++){const cur=[i];for(let j=1;j<=h.length;j++)cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(r[i-1]===h[j-1]?0:1));prev=cur}
+  return prev[h.length]/r.length}
+
+/* ================= step 1 ================= */
+async function checkKey(){
+  $('#acctInfo').textContent='Checking…';
+  try{const j=await (await el('/v1/user/subscription')).json();
+    const left=(j.character_limit||0)-(j.character_count||0);
+    $('#acctInfo').textContent=`Key works. Plan: ${j.tier||'unknown'}. Credits used ${fmtN(j.character_count||0)} of ${fmtN(j.character_limit||0)} (${fmtN(left)} left).`;
+    return left}
+  catch(e){$('#acctInfo').textContent=e.message;return null}}
+async function loadVoices(){
+  $('#voiceInfo').textContent='Loading…';
+  try{const j=await (await el('/v1/voices')).json();const voices=(j.voices||[]).map(v=>({id:v.voice_id,name:v.name,cat:v.category||''}));
+    ls.set('pvf.voices',JSON.stringify(voices));fillVoices(voices);
+    try{const m=await (await el('/v1/models')).json();const tts=(m||[]).filter(x=>x.can_do_text_to_speech);
+      if(tts.length){$('#modelSel').innerHTML=tts.map(x=>`<option value="${esc(x.model_id)}">${esc(x.name||x.model_id)}</option>`).join('');$('#modelSel').value=S.modelId;if(!$('#modelSel').value){S.modelId=tts[0].model_id;$('#modelSel').value=S.modelId;saveSettings()}}}catch{}
+    $('#voiceInfo').textContent=`${voices.length} voices loaded.`}
+  catch(e){$('#voiceInfo').textContent=e.message}}
+function fillVoices(voices){
+  const sel=$('#voiceSel');sel.innerHTML='<option value="">Choose a voice</option>'+voices.map(v=>`<option value="${esc(v.id)}">${esc(v.name)}${v.cat?' ('+esc(v.cat)+')':''}</option>`).join('');
+  if(voices.some(v=>v.id===S.voiceId))sel.value=S.voiceId;else if(S.voiceId)$('#voiceManual').value=S.voiceId}
+async function preview(){
+  const btn=$('#btnPreview');btn.disabled=true;$('#previewInfo').textContent='Generating…';
+  try{const i16=await tts($('#previewText').value.trim()||'Hello there.',S.seed);const f=i16toF32(i16);
+    playBuffer(toBuffer(f,SR()));S.charsUsed+=$('#previewText').value.length;saveSettings();renderStats();
+    const q=analyze(f,SR(),$('#previewText').value);
+    $('#previewInfo').textContent=`${f.length/SR()>0?(f.length/SR()).toFixed(2):0} s of audio, speech ${q.speech.toFixed(2)} s, loudness ${q.rmsDb.toFixed(1)} dBFS.`}
+  catch(e){$('#previewInfo').textContent=e.message}
+  btn.disabled=false}
+
+/* ================= step 2: corpus ================= */
+async function readFiles(input){let t='';for(const f of input.files)t+='\n\n'+await f.text();return t}
+async function processCorpus(){
+  const text=$('#corpusIn').value+(await readFiles($('#corpusFiles')));
+  if(!text.trim())return toast('Paste some text or choose a file first.');
+  const sents=splitSentences(text),reasons={},samples={},seen=new Set(state.pool.map(p=>normKey(p.text)));
+  let added=0,dup=0;const add=[];
+  for(const raw of sents){const{text:t,why}=cleanOne(raw);
+    if(why){reasons[why]=(reasons[why]||0)+1;(samples[why]=samples[why]||[]).length<3&&samples[why].push(t);continue}
+    const k=normKey(t);if(seen.has(k)){dup++;continue}seen.add(k);add.push({text:t,type:sentenceType(t)});added++}
+  state.pool.push(...add);await DB.put('meta',state.pool,'pool');
+  const rows=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).map(([r,n])=>`<tr><td>${esc(r)}</td><td class="num">${fmtN(n)}</td><td>${samples[r].map(x=>`<div class="hint" style="margin:0">${esc(x.slice(0,110))}</div>`).join('')}</td></tr>`).join('');
+  $('#cleanReport').innerHTML=`<p class="hint">Found ${fmtN(sents.length)} sentences. Added <b>${fmtN(added)}</b> to the pool, skipped ${fmtN(dup)} duplicates.</p>`+(rows?`<div class="tablewrap"><table><tr><th>Dropped because</th><th class="num">Count</th><th>Examples</th></tr>${rows}</table></div>`:'');
+  $('#corpusIn').value='';$('#corpusFiles').value='';renderCorpus()}
+function typeMix(list){const m={statement:0,question:0,exclaim:0};list.forEach(p=>m[p.type]++);const n=list.length||1;
+  return `<span class="tag">${Math.round(m.statement/n*100)}% statements</span><span class="tag">${Math.round(m.question/n*100)}% questions</span><span class="tag">${Math.round(m.exclaim/n*100)}% exclamations</span>`}
+function renderCorpus(){
+  const P=state.pool,sec=P.reduce((a,p)=>a+estSec(p.text),0);
+  $('#poolStats').innerHTML=P.length?`<p style="margin:0">${fmtN(P.length)} clean sentences, roughly ${fmtDur(sec)} of speech.</p><div style="margin-top:8px">${typeMix(P)}</div>`:'<p class="empty" style="padding:8px 0;text-align:left">The pool is empty. Paste text above or insert the starter sentences.</p>';
+  const I=state.items,chars=I.reduce((a,i)=>a+i.text.length,0);
+  $('#projStats').innerHTML=I.length?`<p style="margin:0">${fmtN(I.length)} sentences in the project, about ${fmtDur(I.reduce((a,i)=>a+estSec(i.text),0))} of speech and ${fmtN(Math.round(chars*creditFactor()))} credits to generate.</p><div style="margin-top:8px">${typeMix(I.map(i=>({type:i.type||sentenceType(i.text)})))}</div>`:'<p class="hint" style="margin:0">No sentences in the project yet.</p>'}
+/* lazy-greedy coverage pick */
+function feats(t){const w=t.toLowerCase().match(/[\p{L}\p{M}']+/gu)||[],tri=new Set();for(const x of w){const p=' '+x+' ';for(let i=0;i+3<=p.length;i++)tri.add(p.slice(i,i+3))}return{w:[...new Set(w)],t:[...tri]}}
+class Heap{constructor(){this.a=[]}get size(){return this.a.length}peek(){return this.a[0]}
+  push(x){const a=this.a;a.push(x);let i=a.length-1;while(i>0){const p=(i-1)>>1;if(a[p].s>=a[i].s)break;[a[p],a[i]]=[a[i],a[p]];i=p}}
+  pop(){const a=this.a,top=a[0],last=a.pop();if(a.length){a[0]=last;let i=0;for(;;){const l=2*i+1,r=l+1;let m=i;if(l<a.length&&a[l].s>a[m].s)m=l;if(r<a.length&&a[r].s>a[m].s)m=r;if(m===i)break;[a[m],a[i]]=[a[i],a[m]];i=m}}return top}}
+function pickBalanced(targetSec){
+  const inProj=new Set(state.items.map(i=>normKey(i.text))),cand=state.pool.filter(p=>!inProj.has(normKey(p.text)));
+  const sw=new Set(),st=new Set(),allT=new Set();
+  const gain=c=>{let g=0;for(const t of c.f.t)if(!st.has(t))g++;for(const w of c.f.w)if(!sw.has(w))g+=2;g+=c.type==='question'?5:c.type==='exclaim'?4:0;return g/Math.sqrt(c.text.length)};
+  const h=new Heap();for(const p of cand){const c={...p,f:feats(p.text)};c.f.t.forEach(t=>allT.add(t));c.s=gain(c);h.push(c)}
+  const out=[];let total=0;
+  while(h.size&&total<targetSec){const top=h.pop(),s=gain(top);if(h.size&&s<h.peek().s-1e-9){top.s=s;h.push(top);continue}
+    out.push(top);total+=estSec(top.text);top.f.w.forEach(w=>sw.add(w));top.f.t.forEach(t=>st.add(t))}
+  return{out,total,words:sw.size,triCov:allT.size?st.size/allT.size:0}}
+function doPick(){
+  if(!state.pool.length)return toast('Add sentences to the pool first.');
+  const r=pickBalanced(S.targetMin*60);state.picked=r.out.map(({text,type})=>({text,type}));
+  const chars=state.picked.reduce((a,p)=>a+p.text.length,0);
+  $('#pickReport').innerHTML=`<p class="hint">Picked <b>${fmtN(r.out.length)}</b> sentences, about ${fmtDur(r.total)} of speech, costing roughly ${fmtN(Math.round(chars*creditFactor()))} credits with ${esc(S.modelId)}. Covers ${fmtN(r.words)} distinct words and ${Math.round(r.triCov*100)}% of the letter patterns in the pool.${r.total<S.targetMin*60?' The pool ran out before the target — add more text for a better selection.':''}</p><div style="margin-top:8px">${typeMix(state.picked)}</div>
+  <div class="tablewrap" style="max-height:240px;overflow:auto;margin-top:10px"><table>${state.picked.slice(0,60).map(p=>`<tr><td>${esc(p.text)}</td></tr>`).join('')}</table></div>`;
+  $('#btnAddPicked').disabled=!state.picked.length}
+async function addItems(list){
+  const have=new Set(state.items.map(i=>normKey(i.text))),fresh=[];
+  for(const p of list){const k=normKey(p.text);if(have.has(k))continue;have.add(k);
+    fresh.push({id:'utt_'+String(state.nextId++).padStart(5,'0'),text:p.text,type:p.type||sentenceType(p.text),status:'pending',attempts:0,review:null,qc:null,created:Date.now()})}
+  if(!fresh.length){toast('Those sentences are already in the project.');return 0}
+  await DB.putMany('items',fresh);await DB.put('meta',state.nextId,'nextId');
+  fresh.forEach(it=>{state.items.push(it);state.byId.set(it.id,it)});
+  toast(`Added ${fmtN(fresh.length)} sentences to the project.`);renderAll();return fresh.length}
+
+/* ================= step 3: generate ================= */
+function logGen(m){const l=$('#genLog');l.textContent+=`[${new Date().toLocaleTimeString()}] ${m}\n`;if(l.textContent.length>40000)l.textContent=l.textContent.slice(-30000);l.scrollTop=l.scrollHeight}
+function genList(scope){return state.items.filter(i=>scope==='pending'?i.status==='pending':scope==='failed'?i.status==='error':scope==='flagged'?i.status==='done'&&!i.review&&flagsOf(i).length:i.review==='rejected')}
+function renderGenEstimate(){const L=genList($('#genScope').value),c=L.reduce((a,i)=>a+i.text.length,0);
+  $('#genEstimate').textContent=L.length?`${fmtN(L.length)} clips, about ${fmtDur(L.reduce((a,i)=>a+estSec(i.text),0))} of audio and ${fmtN(Math.round(c*creditFactor()))} credits.`:'Nothing to generate for this choice.'}
+async function genOne(it,newSeed){
+  if(newSeed)it.attempts=(it.attempts||0)+1;
+  const seed=(S.seed+(it.attempts||0)*7919)%4294967295;
+  for(let a=0;a<6;a++){
+    if(state.stop&&a>0)return false;
+    try{const i16=await tts(it.text,seed),sr=SR();
+      await DB.put('audio',{buf:i16.buffer,sr},it.id);pcmCache.delete(it.id);
+      it.status='done';it.err='';it.review=null;it.sr=sr;
+      it.gen={voice:S.voiceId,voiceName:S.voiceName,model:S.modelId,seed,stability:S.stability,similarity:S.similarity,style:S.style,speed:S.speed,at:Date.now()};
+      it.qc=analyze(i16toF32(i16),sr,it.text);S.charsUsed+=it.text.length;
+      await saveItem(it);return true}
+    catch(e){
+      if(e.status===401||e.status===403||/quota|credit/i.test(e.body||'')){state.stop=true;it.status='error';it.err=e.message;await saveItem(it);logGen(`Stopped: ${e.message}`);return false}
+      if(e.status===429||!e.status||e.status>=500){const w=Math.min(30000,1500*2**a)+Math.random()*600;logGen(`${it.id}: ${e.message} — retrying in ${(w/1000).toFixed(1)} s`);await sleep(w);continue}
+      it.status='error';it.err=e.message;await saveItem(it);logGen(`${it.id} failed: ${e.message}`);return false}}
+  it.status='error';it.err='Gave up after 6 attempts';await saveItem(it);return false}
+async function runGen(){
+  if(state.running)return;
+  if(!S.apiKey||!S.voiceId)return toast('Set the API key and voice in step 1 first.');
+  const scope=$('#genScope').value,L=genList(scope);if(!L.length)return toast('Nothing to generate for this choice.');
+  state.running=true;state.stop=false;$('#btnGen').disabled=true;$('#btnStop').disabled=false;
+  let idx=0,ok=0,bad=0;const t0=Date.now(),newSeed=scope==='flagged'||scope==='rejected';
+  logGen(`Starting ${L.length} clips with ${S.concurrency} parallel requests.`);
+  const upd=()=>{const d=ok+bad;$('#genBar').style.width=(d/L.length*100)+'%';const el=(Date.now()-t0)/1000,eta=d?el/d*(L.length-d):0;
+    $('#genStatus').textContent=`${fmtN(d)} of ${fmtN(L.length)} done, ${fmtN(bad)} failed${d?`, about ${fmtDur(eta)} left`:''}.`};
+  const worker=async()=>{while(!state.stop&&idx<L.length){const it=L[idx++];const r=await genOne(it,newSeed);r?ok++:bad++;
+    if(r){const f=flagsOf(it);logGen(`${it.id} ok ${it.qc.outDur.toFixed(2)} s${f.length?'  flags: '+f.map(k=>FLAG[k]).join(', '):''}`)}
+    upd();if((ok+bad)%10===0){renderStats();saveSettings()}}};
+  await Promise.all(Array.from({length:Math.max(1,Math.min(10,S.concurrency|0))},worker));
+  recomputeRates();saveSettings();state.running=false;$('#btnGen').disabled=false;$('#btnStop').disabled=true;
+  logGen(state.stop?'Stopped.':`Finished: ${ok} generated, ${bad} failed.`);renderAll()}
+
+/* ================= step 4: QC ================= */
+async function reanalyze(){
+  const L=state.items.filter(i=>i.status==='done');let n=0;
+  for(const it of L){const p=await getPCM(it.id,false);if(!p)continue;const old=it.qc||{};it.qc=analyze(p.f32,p.sr,it.text);
+    if(old.wer!=null){it.qc.wer=old.wer;it.qc.asr=old.asr}await saveItem(it);
+    if(++n%25===0){$('#reStatus').textContent=`${n} of ${L.length}…`;await sleep(0)}}
+  recomputeRates();$('#reStatus').textContent=`Re-checked ${n} clips.`;renderAll()}
+async function runStt(){
+  if(state.sttRunning)return;const sc=$('#sttScope').value;
+  const L=state.items.filter(i=>i.status==='done'&&(sc==='all'||(sc==='flagged'?flagsOf(i).length:i.qc&&i.qc.wer==null)));
+  if(!L.length)return toast('No clips match that choice.');
+  state.sttRunning=true;state.sttStop=false;$('#btnStt').disabled=true;$('#btnSttStop').disabled=false;
+  let idx=0,d=0,fails=0;
+  const worker=async()=>{while(!state.sttStop&&idx<L.length){const it=L[idx++];
+    try{const p=await getPCM(it.id,false);const txt=await stt(cleanClip(p.f32,it.qc,p.sr),p.sr);it.qc.asr=txt;it.qc.wer=wer(it.text,txt);await saveItem(it)}
+    catch(e){fails++;$('#sttStatus').textContent=e.message;if(e.status===401||e.status===403)state.sttStop=true;if(e.status===429)await sleep(4000)}
+    d++;$('#sttBar').style.width=(d/L.length*100)+'%';$('#sttStatus').textContent=`${d} of ${L.length} checked${fails?`, ${fails} errors`:''}.`}};
+  await Promise.all([worker(),worker()]);
+  state.sttRunning=false;$('#btnStt').disabled=false;$('#btnSttStop').disabled=true;renderAll()}
+function renderQC(){
+  const D=state.items.filter(i=>i.status==='done');
+  if(!D.length){$('#qcSummary').innerHTML='<p class="empty">No clips yet. Generate some in step 3.</p>';return}
+  const counts={};let flagged=0;D.forEach(i=>{const f=flagsOf(i);if(f.length)flagged++;f.forEach(k=>counts[k]=(counts[k]||0)+1)});
+  const checked=D.filter(i=>i.qc?.wer!=null);
+  const rates=D.filter(i=>i.qc?.rate>0).map(i=>i.qc);
+  let hist='';if(rates.length>5){const lo=Math.min(...rates.map(q=>q.rate)),hi=Math.max(...rates.map(q=>q.rate)),B=30,bins=Array(B).fill(0),out=Array(B).fill(false);
+    rates.forEach(q=>{const b=Math.min(B-1,Math.floor((q.rate-lo)/((hi-lo)||1)*B));bins[b]++;if(q.z!=null&&Math.abs(q.z)>S.qcZ)out[b]=true});const mx=Math.max(...bins);
+    hist=`<h3 style="margin-top:18px">Speaking rate across the set</h3><div class="hist">${bins.map((c,i)=>`<i class="${out[i]?'out':''}" style="height:${c/mx*100}%" title="${c} clips"></i>`).join('')}</div>
+    <div class="row" style="justify-content:space-between"><span class="hint">${lo.toFixed(1)} letters/s</span><span class="hint">median ${(state.rateMed||0).toFixed(1)}</span><span class="hint">${hi.toFixed(1)} letters/s</span></div>`}
+  $('#qcSummary').innerHTML=`<p style="margin:0">${fmtN(D.length)} clips checked, <b>${fmtN(flagged)}</b> flagged. ${checked.length?`Transcript-checked ${fmtN(checked.length)}; median word error ${(median(checked.map(i=>i.qc.wer))*100).toFixed(1)}%.`:'No transcript check yet.'}</p>
+  <div class="tablewrap" style="margin-top:10px"><table><tr><th>Issue</th><th class="num">Clips</th></tr>${Object.keys(FLAG).filter(k=>counts[k]).map(k=>`<tr><td>${FLAG[k]}</td><td class="num">${counts[k]}</td></tr>`).join('')||'<tr><td colspan="2">No issues found.</td></tr>'}</table></div>${hist}`}
+
+/* ================= step 5: review ================= */
+function buildRevList(){
+  const f=$('#revFilter').value;let L=state.items.filter(i=>i.status==='done');
+  if(f==='flagged')L=L.filter(i=>!i.review&&flagsOf(i).length);else if(f==='unreviewed')L=L.filter(i=>!i.review);
+  else if(f==='approved')L=L.filter(i=>i.review==='approved');else if(f==='rejected')L=L.filter(i=>i.review==='rejected');
+  if($('#revSort').value==='sev')L.sort((a,b)=>sevOf(b)-sevOf(a));state.revList=L}
+function renderReview(keepId){
+  buildRevList();const L=state.revList;
+  if(keepId!==undefined){const k=L.findIndex(i=>i.id===keepId);state.revIdx=k>=0?k:Math.min(state.revIdx,L.length-1)}
+  state.revIdx=Math.max(0,Math.min(state.revIdx,L.length-1));
+  $('#revCount').textContent=`${fmtN(L.length)} clips`;
+  const start=Math.max(0,Math.min(state.revIdx-100,L.length-250));
+  $('#revList').innerHTML=L.length?L.slice(start,start+250).map((it,k)=>{const i=start+k,f=flagsOf(it),cls=it.review||(f.length?'flagged':'');
+    return `<div class="li ${i===state.revIdx?'cur':''}" data-i="${i}"><span class="dot ${cls}"></span><div>${esc(it.text.length>90?it.text.slice(0,90)+'…':it.text)}<small>${it.id}${f.length?' — '+f.map(k=>FLAG[k]).join(', '):''}</small></div></div>`}).join(''):'<div class="empty">Nothing here. Try another filter.</div>';
+  $('#revList .cur')?.scrollIntoView({block:'nearest'});
+  renderDetail()}
+async function renderDetail(){
+  const it=state.revList[state.revIdx],box=$('#revDetail');stopAudio();
+  if(!it){box.innerHTML='<div class="panel empty">Pick a clip from the list.</div>';return}
+  const q=it.qc||{},f=flagsOf(it);
+  box.innerHTML=`<div class="panel">
+    <div class="row" style="justify-content:space-between"><span class="hint" style="margin:0">${it.id}, ${esc(it.type||'')}, attempt ${(it.attempts||0)+1}</span>
+      <span>${it.review?`<span class="tag ${it.review==='approved'?'pass':'flag'}">${it.review}</span>`:''}${f.map(k=>`<span class="tag flag">${FLAG[k]}</span>`).join('')||'<span class="tag pass">No issues found</span>'}</span></div>
+    <p class="say">${esc(it.text)}</p>
+    <div class="wavewrap"><canvas class="wave" id="wave"></canvas><div class="playhead" id="playhead"></div></div>
+    <div class="row">
+      <button class="btn" id="bPlay">Play cleaned</button><button class="btn ghost" id="bPlayRaw">Play original</button>
+      <span style="flex:1"></span>
+      <button class="btn ok" id="bOk">Approve</button><button class="btn warn" id="bNo">Reject</button><button class="btn ghost" id="bGen">Regenerate</button></div>
+    <div class="metrics">
+      <div>Clip length<b>${(q.outDur||0).toFixed(2)} s</b></div><div>Speaking rate<b>${(q.rate||0).toFixed(1)} /s${q.z!=null?` <small style="color:var(--muted)">z ${q.z.toFixed(1)}</small>`:''}</b></div>
+      <div>Longest pause<b>${(q.maxPause||0).toFixed(2)} s</b></div><div>Loudness<b>${(q.rmsDb||0).toFixed(1)} dB</b></div>
+      <div>Peak<b>${(20*Math.log10(q.peak||1e-6)).toFixed(1)} dB</b></div><div>Word error<b>${q.wer!=null?(q.wer*100).toFixed(0)+'%':'not checked'}</b></div></div>
+    ${q.asr!=null?`<p class="hint">Transcript heard: “${esc(q.asr)}”</p>`:''}
+    <div style="margin-top:14px"><label>Script text</label><textarea id="revText" style="min-height:64px;font-family:var(--font);font-size:15px">${esc(it.text)}</textarea></div>
+    <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="bSaveText">Save text (audio already matches it)</button><button class="btn ghost sm" id="bSaveGen">Save text and regenerate</button><button class="btn ghost sm" id="bUndo">Clear decision</button></div>
+    ${it.err?`<p class="hint" style="color:var(--flag)">${esc(it.err)}</p>`:''}</div>`;
+  $('#bPlay').onclick=()=>playItem(true);$('#bPlayRaw').onclick=()=>playItem(false);
+  $('#bOk').onclick=()=>decide('approved');$('#bNo').onclick=()=>decide('rejected');$('#bGen').onclick=()=>regen();
+  $('#bUndo').onclick=()=>decide(null);
+  $('#bSaveText').onclick=async()=>{const t=tidy($('#revText').value);if(!t)return;it.text=t;if(it.qc){const p=await getPCM(it.id);if(p){const o=it.qc;it.qc=analyze(p.f32,p.sr,t);it.qc.z=o.z;it.qc.wer=o.asr!=null?wer(t,o.asr):null;it.qc.asr=o.asr;recomputeRates()}}await saveItem(it);toast('Text saved.');renderReview(it.id)};
+  $('#bSaveGen').onclick=async()=>{const t=tidy($('#revText').value);if(!t)return;it.text=t;await saveItem(it);regen()};
+  const p=await getPCM(it.id);if(p&&state.revList[state.revIdx]===it)drawWave($('#wave'),p.f32,it.qc)}
+function drawWave(cv,f32,q){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;cv.width=w*dpr;cv.height=h*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);
+  const cs=getComputedStyle(document.documentElement),amber=cs.getPropertyValue('--amber').trim(),muted=cs.getPropertyValue('--muted').trim(),line=cs.getPropertyValue('--line').trim();
+  const n=f32.length,spp=n/w,mid=h/2,x0=q?Math.max(0,q.trimStart)/n*w:0,x1=q?Math.min(n,q.trimEnd)/n*w:w;
+  g.fillStyle=amber;g.globalAlpha=.13;g.fillRect(x0,0,x1-x0,h);g.globalAlpha=1;g.fillStyle=line;g.fillRect(0,mid,w,1);
+  const scale=Math.min(4,0.9/Math.max(q?.peak||1,0.05));
+  for(let x=0;x<w;x++){let mn=0,mx=0;const a=Math.floor(x*spp),b=Math.min(n,Math.floor((x+1)*spp));for(let i=a;i<b;i++){const v=f32[i];if(v<mn)mn=v;if(v>mx)mx=v}
+    g.fillStyle=x>=x0&&x<=x1?amber:muted;g.fillRect(x,mid-mx*mid*scale,1,Math.max(1,(mx-mn)*mid*scale))}}
+async function playItem(clean){
+  const it=state.revList[state.revIdx];if(!it)return;if(curSrc){stopAudio();return}
+  const p=await getPCM(it.id);if(!p)return;const f=clean?cleanClip(p.f32,it.qc,p.sr):p.f32;
+  const ph=$('#playhead'),cv=$('#wave'),n=p.f32.length;
+  playBuffer(toBuffer(f,p.sr),pr=>{if(!ph)return;ph.style.display='block';const s=clean?it.qc.trimStart:0,pos=(s+pr*f.length)/n;ph.style.left=Math.max(0,Math.min(1,pos))*cv.clientWidth+'px'})}
+async function decide(v){
+  const it=state.revList[state.revIdx];if(!it)return;const next=state.revList[state.revIdx+1];
+  it.review=v;await saveItem(it);renderStats();
+  const keep=v===null?it.id:(next?next.id:it.id);renderReview(keep);
+  if(v&&next&&S.autoPlay!==false)setTimeout(()=>playItem(true),120)}
+async function regen(){
+  const it=state.revList[state.revIdx];if(!it)return;if(!S.apiKey||!S.voiceId)return toast('Set the API key and voice in step 1 first.');
+  toast('Regenerating with a new seed…');state.stop=false;const ok=await genOne(it,true);recomputeRates();saveSettings();
+  toast(ok?'New take ready.':'Regeneration failed: '+(it.err||''));renderStats();renderReview(it.id);if(ok)setTimeout(()=>playItem(true),100)}
+async function approveClean(){
+  const L=state.items.filter(i=>i.status==='done'&&!i.review&&!flagsOf(i).length);if(!L.length)return toast('No unflagged, unreviewed clips.');
+  if(!confirm(`Approve ${L.length} clips that passed every check without listening? Spot-check a sample first if you can.`))return;
+  L.forEach(i=>i.review='approved');await DB.putMany('items',L);toast(`Approved ${L.length} clips.`);renderAll()}
+
+/* ================= step 6: export ================= */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+class Zip{constructor(){this.parts=[];this.cd=[];this.off=0;this.n=0;const d=new Date();this.time=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);this.date=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate()}
+  add(name,data){if(typeof data==='string')data=new TextEncoder().encode(data);const nb=new TextEncoder().encode(name),crc=crc32(data),L=new DataView(new ArrayBuffer(30));
+    L.setUint32(0,0x04034b50,true);L.setUint16(4,20,true);L.setUint16(6,0x0800,true);L.setUint16(8,0,true);L.setUint16(10,this.time,true);L.setUint16(12,this.date,true);
+    L.setUint32(14,crc,true);L.setUint32(18,data.length,true);L.setUint32(22,data.length,true);L.setUint16(26,nb.length,true);L.setUint16(28,0,true);
+    this.parts.push(L.buffer,nb,data);const C=new DataView(new ArrayBuffer(46));
+    C.setUint32(0,0x02014b50,true);C.setUint16(4,20,true);C.setUint16(6,20,true);C.setUint16(8,0x0800,true);C.setUint16(10,0,true);C.setUint16(12,this.time,true);C.setUint16(14,this.date,true);
+    C.setUint32(16,crc,true);C.setUint32(20,data.length,true);C.setUint32(24,data.length,true);C.setUint16(28,nb.length,true);
+    for(const o of[30,32,34,36])C.setUint16(o,0,true);C.setUint32(38,name.endsWith('.sh')?(0o100755<<16)>>>0:0,true);C.setUint32(42,this.off,true);
+    this.cd.push(C.buffer,nb);this.off+=30+nb.length+data.length;this.n++}
+  blob(){const size=this.cd.reduce((a,b)=>a+b.byteLength,0),E=new DataView(new ArrayBuffer(22));E.setUint32(0,0x06054b50,true);E.setUint16(8,this.n,true);E.setUint16(10,this.n,true);E.setUint32(12,size,true);E.setUint32(16,this.off,true);
+    return new Blob([...this.parts,...this.cd,E.buffer],{type:'application/zip'})}}
+function exportList(){const inc=$('#expScope').value;return state.items.filter(i=>i.status==='done'&&(i.sr||SR())===SR()&&(i.review==='approved'||(inc==='approved+pass'&&!i.review&&!flagsOf(i).length)))}
+function renderExport(){
+  const L=exportList(),sec=L.reduce((a,i)=>a+(i.qc?.outDur||0),0),mixed=state.items.filter(i=>i.status==='done'&&(i.sr||SR())!==SR()).length;
+  const warn=[];if(L.length<300)warn.push('Under 300 clips — fine-tuning works, but expect a less stable voice.');if(sec<1800)warn.push('Under 30 minutes of audio.');
+  if(mixed)warn.push(`${mixed} clips were made at a different sample rate and are left out.`);
+  $('#expSummary').innerHTML=`<p style="margin:0"><b>${fmtN(L.length)}</b> clips, ${fmtDur(sec)} of audio at ${fmtN(SR())} Hz.</p>${warn.map(w=>`<p class="hint">${w}</p>`).join('')}`}
+async function doExport(){
+  const L=exportList();if(!L.length)return toast('Approve some clips in step 5 first.');
+  const btn=$('#btnExport');btn.disabled=true;const z=new Zip(),sr=SR(),m1=[],m2=[],rep=['id|duration_s|speech_rate|rate_z|word_error|review|flags|text'];let sec=0;
+  for(let k=0;k<L.length;k++){const it=L[k],p=await getPCM(it.id,false);if(!p)continue;const c=cleanClip(p.f32,it.qc,p.sr);sec+=c.length/sr;
+    z.add(`dataset/wav/${it.id}.wav`,wavBytes(c,sr));const t=it.text.replace(/[|\r\n]+/g,' ').trim();m1.push(`${it.id}|${t}`);m2.push(`${it.id}.wav|${t}`);
+    const q=it.qc;rep.push([it.id,(c.length/sr).toFixed(2),q.rate.toFixed(2),q.z!=null?q.z.toFixed(2):'',q.wer!=null?q.wer.toFixed(3):'',it.review||'',flagsOf(it).join(' '),t].join('|'));
+    if(k%20===0){$('#expBar').style.width=(k/L.length*100)+'%';$('#expStatus').textContent=`Packing ${k} of ${L.length}…`;await sleep(0)}}
+  const cmd=buildCommands();
+  z.add('dataset/metadata.csv',m1.join('\n')+'\n');z.add('dataset/metadata_piper1.csv',m2.join('\n')+'\n');z.add('dataset/qc_report.csv',rep.join('\n')+'\n');
+  z.add('dataset/test_sentences.txt',testLines().join('\n')+'\n');
+  z.add('dataset/scripts/1_setup.sh',cmd.setup);z.add('dataset/scripts/2_train.sh',cmd.train);z.add('dataset/scripts/3_export_and_test.sh',cmd.exp);z.add('dataset/scripts/high_quality_legacy.sh',cmd.legacy);
+  z.add('dataset/dataset_info.json',JSON.stringify({created:new Date().toISOString(),clips:L.length,seconds:Math.round(sec),sample_rate:sr,voice_id:S.voiceId,voice_name:S.voiceName,model:S.modelId,
+    settings:{stability:S.stability,similarity:S.similarity,style:S.style,speed:S.speed,speaker_boost:S.speakerBoost,seed:S.seed},qc:{target_rms_dbfs:S.qcTargetRms,peak_dbfs:S.qcPeak,pad_lead_s:S.qcPadLead,pad_trail_s:S.qcPadTrail}},null,2));
+  z.add('dataset/README.md',`# ${S.trVoice} dataset\n\n${L.length} clips, ${fmtDur(sec)}, ${sr} Hz mono 16-bit.\n\n1. Copy this ZIP to your GPU machine.\n2. Edit ZIP= in scripts/2_train.sh if needed, then run scripts/1_setup.sh once.\n3. Run scripts/2_train.sh; watch TensorBoard.\n4. Run scripts/3_export_and_test.sh to get ${S.trVoice}.onnx + .onnx.json and test clips.\n5. Load the test clips in Piper Voice Forge, step 8.\n`);
+  const name=`${S.trVoice.replace(/[^\w.-]+/g,'_')}_dataset.zip`;download(z.blob(),name);
+  $('#expBar').style.width='100%';$('#expStatus').textContent=`Saved ${name}: ${L.length} clips, ${fmtDur(sec)}.`;S.lastZip=name;saveSettings();renderTrain();btn.disabled=false}
+async function resetProject(){
+  if(!confirm('Delete every sentence, audio clip and decision in this project? This cannot be undone.'))return;
+  await DB.clear('items');await DB.clear('audio');await DB.put('meta',1,'nextId');
+  state.items=[];state.byId.clear();state.nextId=1;pcmCache.clear();toast('Project cleared. The sentence pool is kept.');renderAll()}
+
+/* ================= step 7: training commands ================= */
+function buildCommands(){
+  const v=S.trVoice.trim()||'en_US-myvoice-medium',base=S.trBase.trim()||'$HOME/piper-voice',es=S.trEspeak.trim()||'en-us',vram=+S.trVram||24;
+  const batch={8:8,12:12,16:20,24:32,48:64}[vram]||16,batchHi=Math.max(4,batch>>1),maxEp=(+S.trBaseEpoch||0)+(+S.trExtra||1000),zip=S.lastZip||`${v}_dataset.zip`;
+  const vHigh=v.replace(/-medium$/,'')+(/-high$/.test(v)?'':'-high');
+  const head=`#!/usr/bin/env bash\nset -euo pipefail\nBASE="${base}"\nVOICE="${v}"\n`;
+  const setup=head+`
+# System packages (Ubuntu/Debian)
+sudo apt-get update
+sudo apt-get install -y build-essential cmake ninja-build espeak-ng git unzip wget python3-venv python3-dev
+
+mkdir -p "$BASE"
+git clone https://github.com/OHF-voice/piper1-gpl.git "$BASE/piper1-gpl"
+cd "$BASE/piper1-gpl"
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install --upgrade pip
+python3 -m pip install -e '.[train]'
+./build_monotonic_align.sh
+python3 setup.py build_ext --inplace
+
+# Base checkpoint to fine-tune from (medium quality, ${SR()} Hz)
+wget -O "$BASE/base.ckpt" '${S.trCkpt}'
+`;
+  const train=head+`ZIP="$HOME/Downloads/${zip}"   # the ZIP exported by Piper Voice Forge
+
+cd "$BASE/piper1-gpl"
+source .venv/bin/activate
+[ -d "$BASE/dataset" ] || unzip -q "$ZIP" -d "$BASE"
+
+# Fine-tune. Epochs continue from the checkpoint (${S.trBaseEpoch}), so max_epochs = ${S.trBaseEpoch} + ${S.trExtra}.
+# Out of GPU memory? Lower --data.batch_size.
+python3 -m piper.train fit \\
+  --data.voice_name "$VOICE" \\
+  --data.csv_path "$BASE/dataset/metadata_piper1.csv" \\
+  --data.audio_dir "$BASE/dataset/wav/" \\
+  --model.sample_rate ${SR()} \\
+  --data.espeak_voice "${es}" \\
+  --data.cache_dir "$BASE/cache/" \\
+  --data.config_path "$BASE/$VOICE.onnx.json" \\
+  --data.batch_size ${batch} \\
+  --trainer.max_epochs ${maxEp} \\
+  --trainer.default_root_dir "$BASE/runs" \\
+  --ckpt_path "$BASE/base.ckpt"
+
+# In another terminal:
+#   source "$BASE/piper1-gpl/.venv/bin/activate" && tensorboard --logdir "$BASE/runs/lightning_logs"
+# To continue after a stop, replace --ckpt_path with your latest checkpoint.
+`;
+  const exp=head+`
+cd "$BASE/piper1-gpl"
+source .venv/bin/activate
+
+CKPT=$(ls -t "$BASE"/runs/lightning_logs/version_*/checkpoints/*.ckpt | head -n 1)
+echo "Exporting $CKPT"
+python3 -m piper.train.export_onnx --checkpoint "$CKPT" --output-file "$BASE/$VOICE.onnx"
+# $VOICE.onnx.json was written during training (--data.config_path)
+
+mkdir -p "$BASE/tests"
+n=0
+while IFS= read -r line || [ -n "$line" ]; do
+  [ -z "$line" ] && continue
+  n=$((n+1))
+  python3 -m piper -m "$BASE/$VOICE.onnx" -f "$BASE/tests/test_$(printf '%03d' "$n").wav" -- "$line"
+done < "$BASE/dataset/test_sentences.txt"
+
+echo "Voice: $BASE/$VOICE.onnx + $BASE/$VOICE.onnx.json"
+echo "Test clips: $BASE/tests  (load them in Piper Voice Forge, step 8)"
+`;
+  const legacy=head+`# Legacy trainer (rhasspy/piper, archived) for --quality high.
+# Recommended inside: docker run --gpus all -it -v "$BASE":"$BASE" nvcr.io/nvidia/pytorch:22.03-py3
+git clone https://github.com/rhasspy/piper.git "$BASE/piper-legacy"
+cd "$BASE/piper-legacy/src/python"
+python3 -m venv .venv && source .venv/bin/activate
+pip3 install --upgrade pip wheel setuptools
+pip3 install -e .
+./build_monotonic_align.sh
+wget -O "$BASE/base_high.ckpt" '${S.trCkptHigh||'PASTE_HIGH_QUALITY_CKPT_URL'}'
+
+python3 -m piper_train.preprocess \\
+  --language "${es}" \\
+  --input-dir "$BASE/dataset/" \\
+  --output-dir "$BASE/train_high/" \\
+  --dataset-format ljspeech \\
+  --single-speaker \\
+  --sample-rate 22050
+
+# Set --max_epochs to the checkpoint's epoch + about 1000
+python3 -m piper_train \\
+  --dataset-dir "$BASE/train_high/" \\
+  --accelerator gpu --devices 1 \\
+  --batch-size ${batchHi} \\
+  --validation-split 0.0 --num-test-examples 0 \\
+  --max_epochs 99999 \\
+  --resume_from_checkpoint "$BASE/base_high.ckpt" \\
+  --checkpoint-epochs 1 \\
+  --precision 32 \\
+  --quality high \\
+  --max-phoneme-ids 400
+
+CKPT=$(ls -t "$BASE"/train_high/lightning_logs/version_*/checkpoints/*.ckpt | head -n 1)
+python3 -m piper_train.export_onnx "$CKPT" "$BASE/${vHigh}.onnx"
+cp "$BASE/train_high/config.json" "$BASE/${vHigh}.onnx.json"
+`;
+  return{setup,train,exp,legacy}}
+function renderTrain(){const c=buildCommands();$('#cmdSetup').textContent=c.setup;$('#cmdTrain').textContent=c.train;$('#cmdExport').textContent=c.exp;$('#cmdLegacy').textContent=c.legacy}
+
+/* ================= step 8: test ================= */
+const testLines=()=>S.testSentences.split('\n').map(s=>s.trim()).filter(Boolean);
+async function genRefs(){
+  const T=testLines();if(!T.length)return;$('#refInfo').textContent='Generating references…';
+  try{for(let i=0;i<T.length;i++){if(state.refs[T[i]])continue;const i16=await tts(T[i],S.seed);state.refs[T[i]]={buf:i16.buffer,sr:SR()};S.charsUsed+=T[i].length;$('#refInfo').textContent=`${i+1} of ${T.length}`}
+    await DB.put('meta',state.refs,'refs');saveSettings();$('#refInfo').textContent='References ready.'}
+  catch(e){$('#refInfo').textContent=e.message}renderTest();renderStats()}
+async function loadPiper(files){
+  const F=[...files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));state.piperTests=[];
+  for(const f of F){try{state.piperTests.push({name:f.name,buf:await ac().decodeAudioData(await f.arrayBuffer())})}catch{toast(`Could not read ${f.name}`)}}
+  $('#refInfo').textContent=`${state.piperTests.length} Piper clips loaded, matched to sentences in file-name order.`;renderTest()}
+function renderTest(){
+  const T=testLines();state.testDraft.length=T.length;
+  $('#testTable').innerHTML=T.length?`<div class="tablewrap"><table><tr><th>#</th><th>Sentence</th><th>Listen</th><th>Rating</th><th>Words it got wrong</th></tr>${T.map((t,i)=>{const d=state.testDraft[i]||{};return `<tr>
+    <td>${i+1}</td><td style="min-width:220px">${esc(t)}</td>
+    <td style="white-space:nowrap"><button class="btn ghost sm" data-ref="${i}" ${state.refs[t]?'':'disabled'}>ElevenLabs</button> <button class="btn ghost sm" data-pip="${i}" ${state.piperTests[i]?'':'disabled'}>Piper</button></td>
+    <td><select data-rate="${i}" style="width:auto">${['','5 natural','4 good','3 okay','2 robotic','1 broken'].map(o=>`<option value="${o[0]||''}" ${String(d.r||'')===(o[0]||'')?'selected':''}>${o||'—'}</option>`).join('')}</select></td>
+    <td><input data-words="${i}" value="${esc(d.w||'')}" placeholder="e.g. schedule, Priya" style="min-width:160px"></td></tr>`}).join('')}</table></div>`:'<p class="empty">Add test sentences above.</p>';
+  $('#rounds').innerHTML=state.rounds.length?`<h3 style="margin-top:18px">Rounds so far</h3><div class="tablewrap"><table><tr><th>Saved</th><th class="num">Clips in dataset</th><th class="num">Mean rating</th><th>Problem words</th></tr>${state.rounds.map(r=>`<tr><td>${new Date(r.at).toLocaleString()}</td><td class="num">${fmtN(r.clips)}</td><td class="num">${r.mean?r.mean.toFixed(2):'—'}</td><td>${esc(r.words.join(', '))}</td></tr>`).join('')}</table></div>`:''}
+function problemWords(){const s=new Set();state.testDraft.forEach(d=>(d?.w||'').split(/[,;]+|\s{2,}/).map(x=>x.trim().toLowerCase()).filter(Boolean).forEach(x=>s.add(x)));return[...s]}
+async function saveRound(){
+  const r=state.testDraft.map(d=>+d?.r).filter(Boolean);
+  state.rounds.push({at:Date.now(),clips:state.items.filter(i=>i.review==='approved').length,mean:r.length?r.reduce((a,b)=>a+b,0)/r.length:null,words:problemWords()});
+  await DB.put('meta',state.rounds,'rounds');toast('Round saved.');renderTest()}
+function buildImprovement(){
+  const words=problemWords(),per=+$('#impPer').value||6,have=new Set(state.items.map(i=>normKey(i.text))),picked=new Map(),missing=[];
+  const free=state.pool.filter(p=>!have.has(normKey(p.text)));
+  for(const w of words){const re=new RegExp(`(^|[^\\p{L}\\p{M}])${w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}(?![\\p{L}\\p{M}])`,'iu');let c=0;
+    for(const p of free){if(c>=per)break;if(picked.has(p.text))continue;if(re.test(p.text)){picked.set(p.text,p);c++}}if(!c)missing.push(w)}
+  const extra=(type,n,test)=>{let c=0;for(const p of free){if(c>=n)break;if(!picked.has(p.text)&&test(p)){picked.set(p.text,p);c++}}};
+  extra('q',+$('#impQ').value||0,p=>p.type==='question');extra('e',+$('#impE').value||0,p=>p.type==='exclaim');extra('l',+$('#impL').value||0,p=>p.text.length>=140);
+  state.impPicked=[...picked.values()];$('#btnAddImp').disabled=!state.impPicked.length;
+  $('#impReport').innerHTML=`<p class="hint">Found <b>${state.impPicked.length}</b> new sentences${words.length?` for ${words.length} problem words`:''}.${missing.length?` Not in the pool: <b>${esc(missing.join(', '))}</b> — write a few sentences with these below.`:''}${!words.length?' Type the words it got wrong in the Compare table first.':''}</p>`+
+    (state.impPicked.length?`<div class="tablewrap" style="max-height:200px;overflow:auto"><table>${state.impPicked.slice(0,50).map(p=>`<tr><td>${esc(p.text)}</td></tr>`).join('')}</table></div>`:'')}
+async function addCustom(){
+  const out=[],bad=[];for(const s of splitSentences($('#customIn').value)){const{text,why}=cleanOne(s);why?bad.push(`${text} (${why})`):out.push({text,type:sentenceType(text)})}
+  if(out.length){await addItems(out);$('#customIn').value=''}
+  if(bad.length)toast(`Skipped ${bad.length}: ${bad[0]}`)}
+
+/* ================= stats & navigation ================= */
+function counts(){const c={total:state.items.length,gen:0,flag:0,appr:0,rej:0,pend:0,err:0,apprSec:0};
+  for(const it of state.items){if(it.status==='done'){c.gen++;if(it.review==='approved'){c.appr++;c.apprSec+=it.qc?.outDur||0}else if(it.review==='rejected')c.rej++;else if(flagsOf(it).length)c.flag++}else if(it.status==='error')c.err++;else c.pend++}return c}
+const STEPS=['Voice source','Text corpus','Generate','Auto checks','Review','Export','Train and ONNX','Test and improve'];
+function renderStats(){const c=counts();
+  $('#stats').innerHTML=[['Script',fmtN(c.total)],['Generated',fmtN(c.gen)],['To review',fmtN(c.flag)],['Approved',fmtN(c.appr)],['Approved audio',fmtDur(c.apprSec)],['Credits used',fmtN(Math.round(S.charsUsed*creditFactor()))]].map(([k,v])=>`<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('');
+  const sub=[S.voiceName||(S.voiceId?'custom voice':'not set'),`${fmtN(state.pool.length)} in pool`,`${fmtN(c.gen)} of ${fmtN(c.total)}`,`${fmtN(c.flag)} flagged`,`${fmtN(c.appr)} approved, ${fmtN(c.rej)} rejected`,fmtDur(c.apprSec)+' ready','fine-tune commands',`${state.rounds.length} rounds`];
+  const cur=$('.rail button.active')?.dataset.step||'1';
+  $('#rail').innerHTML=STEPS.map((s,i)=>`<button data-step="${i+1}" class="${String(i+1)===cur?'active':''}"><span class="n">${i+1}</span><span>${s}<small>${esc(sub[i])}</small></span></button>`).join('')}
+function go(n){n=String(n);$$('section').forEach(s=>s.classList.toggle('active',s.id==='s'+n));$$('.rail button').forEach(b=>b.classList.toggle('active',b.dataset.step===n));
+  stopAudio();window.scrollTo(0,0);
+  if(n==='2')renderCorpus();if(n==='3')renderGenEstimate();if(n==='4')renderQC();if(n==='5')renderReview();if(n==='6')renderExport();if(n==='7')renderTrain();if(n==='8')renderTest()}
+function renderAll(){renderStats();const a=$('section.active').id.slice(1);if(a==='2')renderCorpus();if(a==='3')renderGenEstimate();if(a==='4')renderQC();if(a==='5')renderReview(state.revList[state.revIdx]?.id);if(a==='6')renderExport();if(a==='7')renderTrain();if(a==='8')renderTest()}
+
+/* ================= wiring ================= */
+function bindSettings(){
+  $$('[data-s]').forEach(el=>{const k=el.dataset.s;
+    if(el.type==='checkbox')el.checked=!!S[k];else el.value=S[k]??'';
+    const out=$(`[data-out="${k}"]`);if(out)out.textContent=el.value;
+    el.addEventListener(el.tagName==='SELECT'||el.type==='checkbox'?'change':'input',()=>{
+      S[k]=el.type==='checkbox'?el.checked:(el.type==='number'||el.type==='range')?parseFloat(el.value):el.value;
+      if(typeof S[k]==='number'&&isNaN(S[k]))S[k]=DEFAULTS[k];
+      const o=$(`[data-out="${k}"]`);if(o)o.textContent=el.value;saveSettings();
+      if(k.startsWith('tr'))renderTrain();if(k==='modelId'){renderStats();renderGenEstimate()}if(k==='qcZ'||k==='qcWerPct')renderStats();if(k==='testSentences')renderTest()})})}
+function wire(){
+  $('#rail').addEventListener('click',e=>{const b=e.target.closest('button[data-step]');if(b)go(b.dataset.step)});
+  document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)go(g.dataset.go);
+    const c=e.target.closest('[data-copy]');if(c)navigator.clipboard.writeText($('#'+c.dataset.copy).textContent).then(()=>toast('Copied.'),()=>toast('Copy failed — select the text manually.'))});
+  $('#btnCheckKey').onclick=checkKey;$('#btnLoadVoices').onclick=loadVoices;$('#btnPreview').onclick=preview;
+  $('#voiceSel').onchange=e=>{S.voiceId=e.target.value;S.voiceName=e.target.selectedOptions[0]?.textContent.replace(/ \(.*\)$/,'')||'';$('#voiceManual').value='';saveSettings();renderStats()};
+  $('#voiceManual').oninput=e=>{const v=e.target.value.trim();if(!v)return;S.voiceId=v;S.voiceName='custom voice';$('#voiceSel').value='';saveSettings();renderStats()};
+  $('#btnStarter').onclick=()=>{$('#corpusIn').value=($('#corpusIn').value?$('#corpusIn').value+'\n':'')+STARTER};
+  $('#btnClean').onclick=processCorpus;
+  $('#btnClearPool').onclick=async()=>{if(!confirm('Empty the candidate pool? Sentences already in the project stay.'))return;state.pool=[];await DB.put('meta',[],'pool');renderCorpus();renderStats()};
+  $('#btnPick').onclick=doPick;$('#btnAddPicked').onclick=async()=>{await addItems(state.picked);state.picked=[];$('#btnAddPicked').disabled=true;$('#pickReport').innerHTML=''};
+  $('#btnAddAll').onclick=()=>addItems(state.pool);
+  $('#btnDownloadScript').onclick=()=>download(new Blob([state.items.map(i=>`${i.id}|${i.text}`).join('\n')+'\n'],{type:'text/plain'}),'script.txt');
+  $('#btnDropPending').onclick=async()=>{const P=state.items.filter(i=>i.status==='pending');if(!P.length)return toast('Every sentence has audio already.');
+    if(!confirm(`Remove ${P.length} sentences that have no audio yet?`))return;await DB.delMany('items',P.map(i=>i.id));
+    state.items=state.items.filter(i=>i.status!=='pending');state.byId=new Map(state.items.map(i=>[i.id,i]));renderAll()};
+  $('#genScope').onchange=renderGenEstimate;$('#btnGen').onclick=runGen;$('#btnStop').onclick=()=>{state.stop=true;logGen('Stopping after current requests…')};
+  $('#btnCredits').onclick=async()=>{const l=await checkKey();if(l!=null)logGen(`Credits left: ${fmtN(l)}`)};
+  $('#btnReanalyze').onclick=reanalyze;$('#btnStt').onclick=runStt;$('#btnSttStop').onclick=()=>{state.sttStop=true};
+  $('#btnRegenFlagged').onclick=()=>{go(3);$('#genScope').value='flagged';renderGenEstimate()};
+  $('#revFilter').onchange=()=>{state.revIdx=0;renderReview()};$('#revSort').onchange=()=>{state.revIdx=0;renderReview()};
+  $('#btnApproveClean').onclick=approveClean;
+  $('#revList').addEventListener('click',e=>{const li=e.target.closest('.li');if(!li)return;state.revIdx=+li.dataset.i;renderReview(state.revList[state.revIdx].id)});
+  document.addEventListener('keydown',e=>{if(!$('#s5').classList.contains('active'))return;if(e.target.closest('input,textarea,select')||e.metaKey||e.ctrlKey||e.altKey)return;
+    const k=e.key.toLowerCase();
+    if(k===' '){e.preventDefault();playItem(true)}else if(k==='a')decide('approved');else if(k==='r')decide('rejected');else if(k==='g')regen();else if(k==='u')decide(null);
+    else if(k==='arrowright'||k==='j'){state.revIdx=Math.min(state.revList.length-1,state.revIdx+1);renderReview(state.revList[state.revIdx]?.id)}
+    else if(k==='arrowleft'||k==='k'){state.revIdx=Math.max(0,state.revIdx-1);renderReview(state.revList[state.revIdx]?.id)}});
+  $('#expScope').onchange=renderExport;$('#btnExport').onclick=doExport;$('#btnReset').onclick=resetProject;
+  $('#btnRefs').onclick=genRefs;$('#piperFiles').onchange=e=>loadPiper(e.target.files);
+  $('#testTable').addEventListener('click',e=>{const r=e.target.closest('[data-ref]'),p=e.target.closest('[data-pip]');
+    if(r){const x=state.refs[testLines()[+r.dataset.ref]];if(x)playBuffer(toBuffer(i16toF32(new Int16Array(x.buf)),x.sr))}
+    if(p){const x=state.piperTests[+p.dataset.pip];if(x)playBuffer(x.buf)}});
+  $('#testTable').addEventListener('input',e=>{const t=e.target;const i=+(t.dataset.rate??t.dataset.words);if(isNaN(i))return;state.testDraft[i]=state.testDraft[i]||{};
+    if(t.dataset.rate!=null)state.testDraft[i].r=t.value;else state.testDraft[i].w=t.value;DB.put('meta',state.testDraft,'testDraft')});
+  $('#testTable').addEventListener('change',e=>{if(e.target.dataset.rate!=null){const i=+e.target.dataset.rate;state.testDraft[i]=state.testDraft[i]||{};state.testDraft[i].r=e.target.value;DB.put('meta',state.testDraft,'testDraft')}});
+  $('#btnSaveRound').onclick=saveRound;$('#btnBuildImp').onclick=buildImprovement;
+  $('#btnAddImp').onclick=async()=>{await addItems(state.impPicked);state.impPicked=[];$('#btnAddImp').disabled=true;$('#impReport').innerHTML='<p class="hint">Added. Go to Generate to record them.</p>'};
+  $('#btnAddCustom').onclick=addCustom;
+  window.addEventListener('resize',()=>{if($('#s5').classList.contains('active')&&state.revList[state.revIdx]){const it=state.revList[state.revIdx];getPCM(it.id).then(p=>p&&drawWave($('#wave'),p.f32,it.qc))}});
+  window.addEventListener('beforeunload',e=>{if(state.running){e.preventDefault();e.returnValue=''}})}
+
+(async function init(){
+  try{await DB.open()}catch(e){document.querySelector('main').insertAdjacentHTML('afterbegin',`<div class="panel" style="border-color:var(--flag)">This browser blocked local storage (${esc(e.message)}). Open the file through a local server: <code>python3 -m http.server</code>, then visit http://localhost:8000.</div>`)}
+  try{navigator.storage?.persist?.()}catch{}
+  if(DB.db){
+    state.items=(await DB.all('items')).sort((a,b)=>a.id.localeCompare(b.id));
+    state.items.forEach(it=>{if(it.status==='generating')it.status='pending';state.byId.set(it.id,it)});
+    state.pool=(await DB.get('meta','pool'))||[];state.nextId=(await DB.get('meta','nextId'))||1;
+    state.refs=(await DB.get('meta','refs'))||{};state.rounds=(await DB.get('meta','rounds'))||[];state.testDraft=(await DB.get('meta','testDraft'))||[]}
+  recomputeRates();bindSettings();
+  try{const v=JSON.parse(ls.get('pvf.voices')||'[]');if(v.length)fillVoices(v);else if(S.voiceId)$('#voiceManual').value=S.voiceId}catch{}
+  if(![...$('#modelSel').options].some(o=>o.value===S.modelId))$('#modelSel').insertAdjacentHTML('beforeend',`<option value="${esc(S.modelId)}">${esc(S.modelId)}</option>`);
+  $('#modelSel').value=S.modelId;
+  wire();renderStats();renderTrain()})();
+</script>
+</body>
+</html>

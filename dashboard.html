@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#EEF1EC;--panel:#fff;--ink:#1C2A28;--muted:#5C6C68;--line:#D3DAD5;--amber:#C98708;--amber-soft:#F5E6C2;
+  --pass:#2F7D55;--pass-soft:#DCEFE3;--flag:#B8472E;--flag-soft:#F6DDD5;--r:10px;
+  --font:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--mono:'JetBrains Mono',ui-monospace,Consolas,monospace;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--paper:#121817;--panel:#1A2221;--ink:#E3EAE6;--muted:#93A39E;--line:#2C3836;--amber:#EBA93A;--amber-soft:#3A2F17;--pass:#5DBB8A;--pass-soft:#193328;--flag:#E07A5F;--flag-soft:#3A221B}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 var(--font)}
+header{display:flex;align-items:center;gap:16px;padding:12px 24px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.brand{font-weight:800;font-size:18px;letter-spacing:-.015em}
+.pill{font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;background:var(--paper);border:1px solid var(--line)}
+.pill.running{background:var(--amber-soft);border-color:transparent}.pill.done{background:var(--pass-soft);color:var(--pass);border-color:transparent}
+.pill.error{background:var(--flag-soft);color:var(--flag);border-color:transparent}
+.spacer{flex:1}
+main{max-width:1180px;margin:0 auto;padding:22px 24px 80px}
+.btn{font:inherit;font-size:14px;font-weight:700;border:1px solid var(--ink);background:var(--ink);color:var(--panel);padding:8px 16px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}.btn.ghost:hover{border-color:var(--ink)}
+.btn.sm{padding:3px 10px;font-size:12.5px}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ok{background:var(--pass);border-color:var(--pass);color:#fff}.btn.warn{background:var(--flag);border-color:var(--flag);color:#fff}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-bottom:16px}
+.panel h3{margin:0 0 12px;font-size:16px}
+.msg{padding:12px 16px;border-radius:var(--r);margin-bottom:16px;font-weight:600;background:var(--amber-soft);white-space:pre-wrap}
+.msg.error{background:var(--flag-soft);color:var(--flag)}.msg.done{background:var(--pass-soft);color:var(--pass)}
+.track{display:grid;grid-template-columns:repeat(11,1fr);gap:6px;margin-bottom:16px}
+.st{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:12.5px;font-weight:600;color:var(--muted);min-height:58px}
+.st i{display:block;font-style:normal;font-size:11px;font-weight:700;margin-bottom:2px}
+.st.done{color:var(--ink)}.st.done i{color:var(--pass)}
+.st.active{border-color:var(--amber);background:var(--amber-soft);color:var(--ink)}.st.active i{color:var(--amber)}
+.now{display:grid;grid-template-columns:1fr auto;gap:6px 20px;align-items:end}
+.now .label{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.now .nums{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right}
+.bar{grid-column:1/-1;height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--amber);width:0;transition:width .4s}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.metric{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.metric b{display:block;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.metric span{font-size:12.5px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:700}.num{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{max-height:460px;overflow:auto}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:0 8px;border-radius:20px;margin:0 3px 3px 0;background:var(--paper);border:1px solid var(--line)}
+.tag.flag{background:var(--flag-soft);color:var(--flag);border-color:transparent}.tag.pass{background:var(--pass-soft);color:var(--pass);border-color:transparent}
+.hint{font-size:13px;color:var(--muted)}
+.log{font-family:var(--mono);font-size:12px;line-height:1.5;max-height:360px;overflow:auto;background:var(--paper);border-radius:8px;padding:10px 12px;white-space:pre-wrap;word-break:break-word}
+.log .warn{color:var(--amber)}.log .error{color:var(--flag)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#settings{display:none}#settings.open{display:block}
+fieldset{border:1px solid var(--line);border-radius:var(--r);padding:12px 16px 16px;margin:0 0 14px}
+legend{font-weight:800;padding:0 6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:3px}
+label.chk{display:flex;gap:8px;align-items:center;color:var(--ink);font-weight:600;margin-top:22px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:7px 10px}
+input[type=checkbox]{width:auto;accent-color:var(--amber)}
+.f small{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.say{font-weight:600}
+@media (max-width:900px){.track{grid-template-columns:repeat(5,1fr)}.cols{grid-template-columns:1fr}main{padding:16px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Voice Forge</div>
+  <span class="pill" id="pill">idle</span>
+  <span class="spacer"></span>
+  <button class="btn" id="bStart">Start</button>
+  <button class="btn ghost" id="bPause" disabled>Pause</button>
+  <button class="btn ghost" id="bSettings">Settings</button>
+</header>
+<main>
+  <section id="settings" class="panel">
+    <h3>Settings</h3>
+    <p class="hint" style="margin-top:0">Saved to <code>work/config.json</code> on this machine. Keys are never shown again after saving.</p>
+    <div id="form"></div>
+    <div class="row">
+      <button class="btn" id="bSave">Save settings</button>
+      <button class="btn ghost" id="bCheck">Check keys</button>
+      <span class="hint" id="saveNote"></span>
+      <span class="spacer"></span>
+      <select id="gotoSel" style="width:auto"></select>
+      <button class="btn ghost" id="bGoto">Restart from this stage</button>
+    </div>
+  </section>
+
+  <div id="msg" class="msg" style="display:none"></div>
+  <div class="track" id="track"></div>
+
+  <div class="panel now">
+    <div class="label" id="pLabel">Waiting to start</div>
+    <div class="nums" id="pNums"></div>
+    <div class="bar"><b id="pBar"></b></div>
+    <div class="hint" id="pDetail"></div>
+  </div>
+
+  <div class="panel" id="tryPanel" style="display:none">
+    <h3>Try your voice</h3>
+    <p class="hint" id="tryVoice" style="margin-top:0"></p>
+    <textarea id="tryText" style="min-height:70px;font-family:var(--font)">Hello! This is my new voice, running completely offline with Piper.</textarea>
+    <div class="grid" style="margin-top:12px">
+      <div><label>Expressiveness (noise) <span id="vNs" class="hint"></span></label><input type="range" id="sNs" min="0.3" max="1.2" step="0.01"><small class="hint">More = livelier pitch and tone; too high sounds shaky.</small></div>
+      <div><label>Rhythm variation (noise w) <span id="vNw" class="hint"></span></label><input type="range" id="sNw" min="0.3" max="1.5" step="0.01"><small class="hint">More = less metronomic timing.</small></div>
+      <div><label>Speed (length) <span id="vLs" class="hint"></span></label><input type="range" id="sLs" min="0.7" max="1.4" step="0.01"><small class="hint">Above 1 = slower, below 1 = faster.</small></div>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="bSpeak">Speak</button><button class="btn ghost" id="bDefaults">Save as the voice's defaults</button><button class="btn ghost" id="bReset">Reset</button><span class="hint" id="tryNote"></span></div>
+    <h3 style="margin-top:20px">Make it more expressive (fine-tune)</h3>
+    <p class="hint" style="margin-top:0">Writes new emotional sentences (joy, surprise, sadness, worry, excitement…), records only those with a livelier ElevenLabs setting, then fine-tunes your current voice on old + new clips. Nothing already recorded is regenerated. Needs working ElevenLabs and OpenAI keys; 25 minutes costs about 21,000 ElevenLabs credits plus the training time of one improvement round.</p>
+    <div class="grid">
+      <div><label>New expressive audio (minutes)</label><input type="number" id="eMin" min="5" step="5"></div>
+      <div><label>ElevenLabs stability for these clips</label><input type="number" id="eStab" min="0" max="1" step="0.05"><small class="hint">Lower = more emotional; 0.3–0.45 works well.</small></div>
+      <div><label>ElevenLabs style for these clips</label><input type="number" id="eStyle" min="0" max="1" step="0.05"></div>
+      <div><label>Training epochs for this round</label><input type="number" id="eEp" min="50" step="50"></div>
+    </div>
+    <div class="row"><button class="btn" id="bExpr">Add expressive data and fine-tune</button><span class="hint" id="exprNote"></span></div>
+  </div>
+
+  <div class="metrics" id="metrics"></div>
+
+  <div class="panel" id="trainPanel" style="display:none">
+    <h3>Training</h3>
+    <div class="row" id="trainInfo"></div>
+    <p class="hint">Full trainer output is in <code>work/train_r1.log</code>. TensorBoard: <code>third_party/piper1-gpl/.venv/bin/tensorboard --logdir work/runs/lightning_logs</code></p>
+  </div>
+
+  <div class="panel" id="results" style="display:none">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0">Voice quality by round</h3>
+      <div class="row"><a class="btn ghost sm" href="/api/download/latest">Download latest ONNX</a><a class="btn sm" id="dlFinal" href="/api/download/final" style="display:none">Download final ONNX</a></div></div>
+    <p class="hint">Word error is measured by transcribing held-out sentences spoken by your Piper voice. The ElevenLabs column is the same test on the original voice — the floor you can realistically reach.</p>
+    <div id="rounds"></div>
+    <h3 style="margin-top:18px">Listen: latest round</h3>
+    <div class="scroll" id="testList"></div>
+  </div>
+
+  <div class="cols">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px"><h3 style="margin:0">Clips</h3>
+        <select id="clipFilter" style="width:auto"><option value="recent">Recently processed</option><option value="rejected">Rejected</option><option value="approved">Approved</option><option value="queued">Waiting for audio</option><option value="test">Test sentences</option></select></div>
+      <div class="scroll" id="clips"></div>
+      <p class="hint">Automatic checks decide everything. Overrides here apply at the next dataset build.</p>
+    </div>
+    <div class="panel">
+      <h3>Activity</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</main>
+<audio id="player"></audio>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtN=n=>n==null?'—':Number(n).toLocaleString('en-US');
+const dur=s=>s==null?'—':s<60?`${Math.round(s)} s`:s<3600?`${Math.round(s/60)} min`:`${Math.floor(s/3600)} h ${Math.round(s%3600/60)} min`;
+const FLAGS={silent:'No speech',short:'Very short',long:'Over 15 s',cutoff:'Ends abruptly',lead:'Long lead silence',pause:'Long pause',clip:'Clipping',quiet:'Too quiet',fast:'Too fast',slow:'Too slow',asr:'Wrong words'};
+async function api(p,o={}){const r=await fetch(p,{headers:{'Content-Type':'application/json'},...o});if(!r.ok){let m=r.statusText;try{m=(await r.json()).detail||m}catch{}throw new Error(m)}return r.json()}
+const post=(p,b={})=>api(p,{method:'POST',body:JSON.stringify(b)});
+
+/* ---------- settings form ---------- */
+const FORM=[
+ ['API keys',[['elevenlabs_api_key','ElevenLabs API key','password'],['openai_api_key','OpenAI API key','password']]],
+ ['Voice (ElevenLabs)',[['voice_id','Voice','voice'],['el_model','Model','text','eleven_multilingual_v2 is the most consistent for datasets'],
+   ['language_code','Language code','text','en, hi, mr… also used for transcription'],['stability','Stability','number','0.55–0.75 for datasets',0.05],
+   ['similarity','Similarity','number','',0.05],['style','Style exaggeration','number','keep at 0',0.05],['speed','Speed','number','',0.01],
+   ['seed','Seed','number'],['speaker_boost','Speaker boost','check']]],
+ ['Sentences (OpenAI)',[['openai_model','OpenAI model','text','any chat model that supports JSON output'],['text_language','Write sentences in','text','e.g. English, Indian English, Hindi in Devanagari'],
+   ['domain','What will this voice read?','text','e.g. a smart-home assistant with Indian names and places'],['test_sentences','Held-out test sentences','number'],
+   ['min_chars','Shortest sentence (characters)','number'],['max_chars','Longest sentence (characters)','number']]],
+ ['Dataset quality',[['target_minutes','Target approved audio (minutes)','number','60–120 is strong; 30 minimum'],['stt_provider','Transcription check by','select','',null,['elevenlabs','openai']],
+   ['stt_model','Transcription model','text','scribe_v2 (ElevenLabs) or e.g. gpt-4o-transcribe (OpenAI)'],['wer_threshold','Max word error per clip','number','0.15 = 15%',0.01],
+   ['max_attempts','Takes per sentence before rejecting','number'],['rate_z','Speaking-rate outlier limit (z)','number','',0.1],
+   ['concurrency','Parallel ElevenLabs requests','number','check your plan’s concurrency limit'],['max_el_credits','ElevenLabs credit cap (0 = none)','number']]],
+ ['Training',[['voice_name','Voice file name','text','lang_REGION-name-medium'],['espeak_voice','eSpeak voice','text','en-us, en-gb, hi, mr…'],
+   ['epochs_first','Epochs in first round','number','about 1000 for fine-tuning'],['epochs_improve','Epochs per improvement round','number'],
+   ['max_rounds','Maximum rounds','number'],['target_wer','Stop when test word error is below','number','',0.01],
+   ['batch_size','Batch size (0 = pick from GPU memory)','number'],
+   ['base_ckpt_url','Base checkpoint URL','text'],['extra_train_args','Extra trainer arguments','text'],['eval_with_apis','Compare with ElevenLabs and auto-score test sentences (uses API credits)','check'],['train_device','Training device','select','auto = NVIDIA if present, otherwise pack the project for a GPU machine. mps = Apple GPU (experimental).',null,['auto','cuda','mps','cpu']]]]];
+let CFG={};
+async function loadConfig(){
+  CFG=await api('/api/config');
+  $('#form').innerHTML=FORM.map(([g,fs])=>`<fieldset><legend>${g}</legend><div class="grid">${fs.map(([k,l,t,h,step,opts])=>{
+    const v=CFG[k];
+    if(t==='check')return `<div class="f"><label class="chk"><input type="checkbox" data-k="${k}" ${v?'checked':''}> ${l}</label></div>`;
+    if(t==='voice')return `<div class="f"><label>${l}</label><div class="row" style="flex-wrap:nowrap"><select data-k="voice_id" id="voiceSel"><option value="${esc(v)}">${esc(CFG.voice_label||v||'Not set')}</option></select><button class="btn ghost sm" id="bVoices" type="button">Load</button></div><small>Or paste an ID: <input id="voiceManual" placeholder="voice ID" style="margin-top:4px"></small></div>`;
+    if(t==='select')return `<div class="f"><label>${l}</label><select data-k="${k}">${opts.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select><small>${h||''}</small></div>`;
+    const ph=t==='password'?(CFG['_'+k]?`saved (${CFG['_'+k]}) — leave blank to keep`:'not set'):'';
+    return `<div class="f"><label>${l}</label><input data-k="${k}" type="${t}" ${step?`step="${step}"`:''} value="${t==='password'?'':esc(v)}" placeholder="${esc(ph)}" autocomplete="off"><small>${h||''}</small></div>`}).join('')}</div></fieldset>`).join('');
+  $('#bVoices').onclick=loadVoices;
+  $('#voiceManual').oninput=e=>{const v=e.target.value.trim();if(v){const s=$('#voiceSel');s.innerHTML=`<option value="${esc(v)}">${esc(v)}</option>`;CFG.voice_label=v}};
+}
+async function loadVoices(){
+  try{const vs=await api('/api/voices');const s=$('#voiceSel'),cur=s.value;
+    s.innerHTML=vs.map(v=>`<option value="${esc(v.id)}" ${v.id===cur?'selected':''}>${esc(v.name)} (${esc(v.category)})</option>`).join('')}
+  catch(e){$('#saveNote').textContent=e.message}}
+async function saveConfig(){
+  const d={};document.querySelectorAll('[data-k]').forEach(el=>{d[el.dataset.k]=el.type==='checkbox'?el.checked:el.value});
+  const s=$('#voiceSel');d.voice_label=s.selectedOptions[0]?.textContent||'';
+  try{const r=await post('/api/config',d);$('#saveNote').textContent=r.note;await loadConfig()}catch(e){$('#saveNote').textContent=e.message}}
+
+/* ---------- status ---------- */
+let STAGES=[{key:'check',label:'Check setup'}],lastLog=0,lastRounds='';
+let STATUS_ROUND=1;
+function render(s){STATUS_ROUND=s.round;
+  STAGES=s.stages;if($('#gotoSel').options.length!==STAGES.length)$('#gotoSel').innerHTML=STAGES.map(x=>`<option value="${x.key}">${esc(x.label)}</option>`).join('');
+  const pill=$('#pill');pill.textContent=s.status;pill.className='pill '+s.status;
+  const run=s.status==='running'||s.status==='pausing';
+  $('#bStart').disabled=run||s.status==='done';$('#bStart').textContent=s.status==='done'?'Finished':(s.stage==='check'&&s.status==='idle')?'Start':'Resume';$('#bPause').disabled=!run;
+  const m=$('#msg');m.style.display=s.message?'block':'none';m.textContent=s.message;m.className='msg '+(s.status==='error'?'error':s.status==='done'?'done':'');
+  $('#track').innerHTML=s.stages.map((x,i)=>`<div class="st ${x.state}"><i>${x.state==='done'?'✓ ':''}${i+1}</i>${esc(x.label)}</div>`).join('');
+  const p=s.progress||{};
+  if(p.label){$('#pLabel').textContent=p.label;const pct=p.total?Math.min(100,p.done/p.total*100):0;$('#pBar').style.width=pct+'%';
+    $('#pNums').textContent=`${fmtN(Math.round(p.done*100)/100)} / ${fmtN(p.total)}${p.eta!=null?` · about ${dur(p.eta)} left`:''}`;$('#pDetail').textContent=p.detail||''}
+  else{$('#pLabel').textContent=run?(s.stages.find(x=>x.state==='active')?.label||'Working'):s.status==='done'?'All done':'Waiting to start';$('#pBar').style.width=s.status==='done'?'100%':'0';$('#pNums').textContent='';$('#pDetail').textContent=''}
+  const c=s.counts||{};
+  $('#metrics').innerHTML=[
+    [`${dur(s.approved_sec)}`,`approved audio of ${dur(s.target_sec)} target`],
+    [fmtN(c.approved||0),'clips approved'],[fmtN(c.rejected||0),'clips rejected'],
+    [fmtN((c.queued||0)+(c.generated||0)+(c.verified||0)),'clips in progress'],[fmtN(c.pool||0),'unused sentences in pool'],
+    [fmtN(s.el_used),`ElevenLabs credits used${s.el_left!=null?`, ${fmtN(s.el_left)} left`:''}`],[fmtN(s.oa_tokens),'OpenAI tokens'],[s.round,'improvement round']
+  ].map(([b,t])=>`<div class="metric"><b>${b}</b><span>${t}</span></div>`).join('');
+  const t=s.train||{};
+  if(t.max){$('#trainPanel').style.display='block';
+    $('#trainInfo').innerHTML=`<span class="tag">Round ${t.round}</span><span class="tag">Epoch ${fmtN(t.epoch)} of ${fmtN(t.max)}</span><span class="tag">${t.pct||0}% through epoch</span>`+Object.entries(t.losses||{}).map(([k,v])=>`<span class="tag">${esc(k)} ${v.toFixed(3)}</span>`).join('')}
+  if(s.reports.length){$('#results').style.display='block';$('#dlFinal').style.display=s.final?'inline-block':'none';
+    const key=JSON.stringify(s.reports.map(r=>r.at));
+    if(key!==lastRounds){lastRounds=key;renderRounds(s.reports)}}
+  if(s.logs.length){const L=$('#log'),stick=L.scrollTop+L.clientHeight>=L.scrollHeight-20;
+    L.insertAdjacentHTML('beforeend',s.logs.map(e=>`<div class="${e.lvl}">${new Date(e.t*1000).toLocaleTimeString()}  ${esc(e.msg)}</div>`).join(''));
+    lastLog=s.logs[s.logs.length-1].id;while(L.childElementCount>1500)L.firstChild.remove();if(stick)L.scrollTop=L.scrollHeight}}
+function renderRounds(R){
+  $('#rounds').innerHTML=`<table><tr><th>Round</th><th class="num">Clips</th><th class="num">Audio</th><th class="num">Epochs</th><th class="num">Piper word error</th><th class="num">ElevenLabs</th><th>Problem words</th></tr>${R.map(r=>`<tr><td>${r.round}</td><td class="num">${fmtN(r.clips)}</td><td class="num">${Math.round(r.minutes)} min</td><td class="num">${fmtN(r.epochs)}</td><td class="num"><b>${r.wer==null?'not scored':(r.wer*100).toFixed(1)+'%'}</b></td><td class="num">${r.ref_wer==null?'—':(r.ref_wer*100).toFixed(1)+'%'}</td><td>${esc((r.problem_words||[]).slice(0,10).join(', '))||'—'}</td></tr>`).join('')}</table>`;
+  const last=R[R.length-1];
+  $('#testList').innerHTML=`<table>${last.items.map(i=>`<tr><td><div class="say">${esc(i.text)}</div>${i.asr!=null?`<div class="hint">Heard: ${esc(i.asr)}</div>`:''}</td>
+    <td style="white-space:nowrap">${i.has_ref!==false?`<button class="btn ghost sm" data-play="/api/audio/ref/${i.id}">ElevenLabs</button> `:''}<button class="btn sm" data-play="/api/audio/eval/${last.round}/${i.id}">Piper</button></td>
+    <td class="num">${i.wer==null?'':(i.wer*100).toFixed(0)+'%'}</td></tr>`).join('')}</table>`}
+async function loadClips(){
+  try{const rows=await api('/api/clips?filter='+$('#clipFilter').value);
+    $('#clips').innerHTML=rows.length?`<table>${rows.map(r=>`<tr><td><div class="say">${esc(r.text)}</div>
+      <div class="hint">${r.utt}, take ${r.attempts+1}${r.wer!=null?`, ${(r.wer*100).toFixed(0)}% word error`:''}${r.dur?`, ${r.dur.toFixed(1)} s`:''}</div>
+      ${r.problems.map(k=>`<span class="tag flag">${FLAGS[k]||k}</span>`).join('')}${r.status==='approved'?'<span class="tag pass">approved</span>':''}${r.status==='rejected'?'<span class="tag flag">rejected</span>':''}
+      ${r.asr&&r.problems.includes('asr')?`<div class="hint">Heard: ${esc(r.asr)}</div>`:''}</td>
+      <td style="white-space:nowrap">${r.has_audio?`<button class="btn sm" data-play="/api/audio/clip/${r.id}">Play</button>`:''}
+      ${['approved','rejected','verified'].includes(r.status)?`<button class="btn ghost sm" data-decide="${r.id}" data-d="${r.status==='approved'?'reject':'approve'}">${r.status==='approved'?'Reject':'Approve'}</button>`:''}</td></tr>`).join('')}</table>`:'<p class="hint">Nothing here yet.</p>'}
+  catch(e){}}
+async function poll(){try{render(await api('/api/status?since='+lastLog))}catch(e){$('#pill').textContent='server offline';$('#pill').className='pill error'}setTimeout(poll,2000)}
+
+/* ---------- wiring ---------- */
+$('#bStart').onclick=()=>post('/api/start');
+$('#bPause').onclick=()=>post('/api/pause');
+$('#bSettings').onclick=()=>$('#settings').classList.toggle('open');
+$('#bSave').onclick=saveConfig;
+$('#bCheck').onclick=async()=>{$('#saveNote').textContent='Checking…';try{const r=await post('/api/check-keys');$('#saveNote').textContent=`ElevenLabs: ${r.elevenlabs}. OpenAI: ${r.openai}.`}catch(e){$('#saveNote').textContent=e.message}};
+let VDEF=null;
+function setSliders(o){[['sNs','vNs','noise_scale'],['sNw','vNw','noise_w_scale'],['sLs','vLs','length_scale']].forEach(([s,v,k])=>{$('#'+s).value=o[k];$('#'+v).textContent=Number(o[k]).toFixed(2)})}
+['sNs','sNw','sLs'].forEach((id,i)=>$('#'+id).addEventListener('input',e=>$('#'+['vNs','vNw','vLs'][i]).textContent=Number(e.target.value).toFixed(2)));
+const sliderVals=()=>({noise_scale:$('#sNs').value,noise_w_scale:$('#sNw').value,length_scale:$('#sLs').value});
+async function refreshVoice(){try{const v=await api('/api/voice');$('#tryPanel').style.display=v.voice?'block':'none';$('#tryVoice').textContent=v.voice?`Using ${v.voice} — runs locally, no API keys needed.`:'';$('#bSpeak').disabled=!v.ready;
+  if(v.defaults&&!VDEF){VDEF=v.defaults;setSliders(VDEF)}
+  if(!$('#eMin').value){$('#eMin').value=CFG.expressive_minutes??25;$('#eStab').value=CFG.expressive_stability??0.35;$('#eStyle').value=CFG.expressive_style??0.3;$('#eEp').value=CFG.epochs_improve??300}}catch{}}
+$('#bReset').onclick=()=>setSliders({noise_scale:0.667,noise_w_scale:0.8,length_scale:1});
+$('#bDefaults').onclick=async()=>{try{const r=await post('/api/voice-defaults',sliderVals());VDEF=sliderVals();$('#tryNote').textContent='Saved into '+r.files.join(', ')}catch(e){$('#tryNote').textContent=e.message}};
+$('#bExpr').onclick=async()=>{if(!confirm('Record new expressive clips with ElevenLabs and fine-tune the voice? This uses API credits and training time.'))return;
+  try{await post('/api/config',{expressive_minutes:$('#eMin').value,expressive_stability:$('#eStab').value,expressive_style:$('#eStyle').value,epochs_improve:$('#eEp').value,max_rounds:Math.max((STATUS_ROUND||1)+1,CFG.max_rounds||1)});
+    await loadConfig();await post('/api/expressive');$('#exprNote').textContent='Started — follow progress above.'}catch(e){$('#exprNote').textContent=e.message}};
+$('#bSpeak').onclick=async()=>{const b=$('#bSpeak');b.disabled=true;$('#tryNote').textContent='Synthesizing…';const t0=performance.now();
+  try{const r=await fetch('/api/speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:$('#tryText').value,...sliderVals()})});
+    if(!r.ok){let m=r.statusText;try{m=(await r.json()).detail||m}catch{}throw new Error(m)}
+    const url=URL.createObjectURL(await r.blob());const a=$('#player');a.src=url;a.play();$('#tryNote').textContent=`Done in ${((performance.now()-t0)/1000).toFixed(1)} s (includes loading the voice).`}
+  catch(e){$('#tryNote').textContent=e.message}b.disabled=false};
+$('#bGoto').onclick=async()=>{try{await post('/api/goto',{stage:$('#gotoSel').value});$('#saveNote').textContent='Next run starts at '+$('#gotoSel').selectedOptions[0].textContent+'.'}catch(e){$('#saveNote').textContent=e.message}};
+$('#clipFilter').onchange=loadClips;
+document.addEventListener('click',async e=>{
+  const p=e.target.closest('[data-play]');if(p){const a=$('#player');a.src=p.dataset.play+(p.dataset.play.includes('?')?'&':'?')+'t='+Date.now();a.play()}
+  const d=e.target.closest('[data-decide]');if(d){await post('/api/decide/'+d.dataset.decide,{decision:d.dataset.d});loadClips()}});
+(async()=>{await loadConfig();const s=await api('/api/status');render(s);if(!s.configured)$('#settings').classList.add('open');poll();loadClips();refreshVoice();setInterval(loadClips,15000);setInterval(refreshVoice,20000)})();
+</script>
+</body>
+</html>
